@@ -1,0 +1,14 @@
+nonterminal J jeff
+terminal ( ) harry ;
+nonterminal K kat
+nonterminal F frank
+nonterminal G garry
+typedterminal num int
+topsym J
+
+J --> K K
+K --> ( harry )
+K --> num:5
+K --> F G
+F -->
+G --> ( K )

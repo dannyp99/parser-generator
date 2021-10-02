@@ -1,0 +1,10 @@
+nonterminal S object
+nonterminal X object
+nonterminal N object
+terminal T
+topsym S
+
+S --> N
+N --> N X
+N -->
+X --> T
