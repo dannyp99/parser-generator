@@ -304,6 +304,45 @@ public class Grammar
         return firsts;
     }
 
+    // generate slr closure
+    public void StateClosure(SortedSet<Gitem> States)
+    {
+        // keeps track of indices of items already processed:
+        var done = new List<Boolean>();
+        int i = 0;
+        for (i = 0; i < States.Count; i++) done.Add(false);
+        int closed = 0; // number of processed items
+        while (closed < States.Count)
+        {
+            foreach (var state in States)
+            {
+                if (!done[i])
+                {
+                    done[i] = true; closed++; // process one item
+                    int ri = state.Ri; // ri is the index of the rule
+                    int pi = state.Pi; // position of next symbol after dot
+                    var rule = Rules[ri];
+                    if (pi < rule.Rhs.Count && !rule.Rhs[pi].Terminal)
+                    {
+                        // add all initial items for this non-terminal.
+                        //List<int> rs = rulesof.get(Ntind.get(rule.Rhs[pi].Sym));
+                        var rs = rule.Rhs[pi].Sym;
+                        //rs contains indices of all rules that has this nonterminal on the lhs
+
+                        foreach (int j in rs)
+                        {
+                            Gitem newitem = new Gitem(j, 0);
+                            States.Add(newitem);
+                            int pgi = new List<Gitem>(States).FindIndex(x => x.Equals(newitem));
+                            // SortedInsert inserts using compareTo order
+                            if (pgi >= 0) done[pgi] = false;
+                        }// for each rule beginning with nonterminal
+                    }//if
+                }// !done.get(i)
+            }// for each item i in State
+        }// while
+    }//Stateclosure
+
     // for testing ParseStdin
     public static void Main(string[] argv) {
         Grammar g = new Grammar();
@@ -332,5 +371,44 @@ public class Grammar
         foreach (var i in fseq) {
             Console.WriteLine(i);
         }
+    }
+}
+
+internal class GitemComparer : IComparer<Gitem> {
+    public int Compare(Gitem x, Gitem y)
+    {
+        return (x.Ri*65536/2 + x.Pi) - (y.Ri*65536/2 + y.Pi);
+    }
+}
+public class Gitem : IComparable {
+    public short Ri { get; set; } // rule index into metaparser.Rules
+    public short Pi { get; set; } // position of dot
+
+    public Gitem(int ri, int pi)
+    {
+        Ri = (Int16)ri;
+        Pi = (Int16)Pi;
+    }
+
+     public override bool Equals(object b) // equals should be consistent with compare
+    {
+	    return CompareTo((Gitem)b) == 0;
+    }
+
+    public int CompareTo(object I)
+    {
+        if (I == null) return 1;
+
+        Gitem other = I as Gitem;
+        if (other != null)
+            return (Ri*65536/2 + Pi) - (other.Ri*65536/2 + other.Pi);
+        else
+           throw new ArgumentException("Object is not a Gitem");
+        
+    }
+
+    public override int GetHashCode() // Generates warning without this function
+    {
+        return Ri.GetHashCode() + Pi.GetHashCode();
     }
 }
