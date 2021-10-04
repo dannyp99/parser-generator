@@ -1,0 +1,15 @@
+nonterminal S Integer
+nonterminal T Integer
+nonterminal U Integer
+terminal x ( )
+topsym S
+
+T --> S   { return 2; }
+S --> T   { return 3; }
+T --> (   { return 4; }
+S --> x   { return 1; }
+T --> U x { return 5; }
+U --> ) T { return 6; }
+T -->     { return 0; }
+
+EOF
