@@ -17,28 +17,30 @@ public class Gitem : IComparable
   {
     public int Compare(Gitem x, Gitem y)
     {
-      var expr = (x.ri*65536/2 + x.pi) - (y.ri*65536/2 + y.pi); 
+      var expr = (x.Ri*65536/2 + x.Pi) - (y.Ri*65536/2 + y.Pi); 
       if (expr == 0){
-        return x.la.CompareTo(y.la);
+        return x.La.CompareTo(y.La);
       }
       return expr;
     }
   }
 
-  public short ri; // rule index
-  public short pi; // position of the dot
-  public short la; // look ahead for LR(1)
-  public bool processed = false; //used for other procedures
+  public short Ri; // rule index
+  public short Pi; // position of the dot
+  public string La; // look ahead for LR(1)
+  public bool Processed = false; //used for other procedures
 
-  public Gitem(short a, short b, short c) { ri=a; pi=b; la=c; }
-  public Gitem(int a, int b, int c) { ri=(short) a; pi=(short) b; la=(short) c;}
+  public Gitem(short a, short b, string c) { Ri=a; Pi=b; La=c; }
+  public Gitem(short a, short b) { Ri=a; Pi=b; La=string.Empty; }
+  public Gitem(int a, int b, string c) { Ri=(Int16) a; Pi=(Int16) b; La = c; }
+  public Gitem(int a, int b) { Ri=(Int16) a; Pi=(Int16) b; La=string.Empty; }
     
   public override bool Equals(Object b)
   {
     // ????  should Gitem also implement IComparable? 
     // this was for sorint we can easily pass in the comparer 
     // but for direct comparison we can use compareTo? Is that redundant?
-    return CompareTo((Gitem)b) == 0; //compareTo((Gitem)b) == 0;
+    return CompareTo(b) == 0; //compareTo((Gitem)b) == 0;
   }
 
   public int CompareTo(object I)
@@ -47,9 +49,9 @@ public class Gitem : IComparable
 
     Gitem other = I as Gitem;
     if (other != null){
-      var expr = (ri*65536/2 + pi) - (other.ri*65536/2 + other.pi);
+      var expr = (Ri*65536/2 + Pi) - (other.Ri*65536/2 + other.Pi);
       if ( expr == 0){
-        return la.CompareTo(other.la);
+        return La.CompareTo(other.La);
       }
       return expr;
     }
@@ -59,21 +61,14 @@ public class Gitem : IComparable
 
   public override int GetHashCode()
   {
-    return ri.GetHashCode() ^ pi.GetHashCode() ^ la.GetHashCode();
+    return Ri.GetHashCode() ^ Pi.GetHashCode() ^ La.GetHashCode();
   }
 
-  public string toString()
+  public override string ToString()
   {
-    return ri+" : "+pi+" : "+la;
+    return Ri + " : " + Pi + " : " + La;
   }
 
   // may want to write prettyprint function
   // TODO: Print Item
-
-
-  public static void Main(string[] argv){
-    Gitem gi = new Gitem(1,2,3);
-    Console.WriteLine(gi.toString());
-  }
-
 } //Gitem

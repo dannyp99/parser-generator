@@ -374,53 +374,53 @@ public class Grammar
     }
 }
 
-internal class GitemComparer : IComparer<Gitem> {
-    public int Compare(Gitem x, Gitem y)
-    {
-        var expr = (x.Ri*65536/2 + x.Pi) - (y.Ri*65536/2 + y.Pi);
-        if (expr == 0)
-        {
-            return x.La.CompareTo(y.La);
-        }
-        return expr;
-    }
-}
+// internal class GitemComparer : IComparer<Gitem> {
+//     public int Compare(Gitem x, Gitem y)
+//     {
+//         var expr = (x.Ri*65536/2 + x.Pi) - (y.Ri*65536/2 + y.Pi);
+//         if (expr == 0)
+//         {
+//             return x.La.CompareTo(y.La);
+//         }
+//         return expr;
+//     }
+// }
 
-public class Gitem : IComparable {
-    public short Ri { get; set; } // rule index into metaparser.Rules
-    public short Pi { get; set; } // position of dot
-    public string La { get; set; }
+// public class Gitem : IComparable {
+//     public short Ri { get; set; } // rule index into metaparser.Rules
+//     public short Pi { get; set; } // position of dot
+//     public string La { get; set; }
 
-    public Gitem(int ri, int pi)
-    {
-        Ri = (Int16)ri;
-        Pi = (Int16)Pi;
-    }
+//     public Gitem(int ri, int pi)
+//     {
+//         Ri = (Int16)ri;
+//         Pi = (Int16)Pi;
+//     }
 
-     public override bool Equals(object b) // equals should be consistent with compare
-    {
-	    return CompareTo((Gitem)b) == 0;
-    }
+//      public override bool Equals(object b) // equals should be consistent with compare
+//     {
+// 	    return CompareTo((Gitem)b) == 0;
+//     }
 
-    public int CompareTo(object I)
-    {
-        if (I == null) return 1;
+//     public int CompareTo(object I)
+//     {
+//         if (I == null) return 1;
 
-        Gitem other = I as Gitem;
-        if (other != null) {
-          var expr = (Ri*65536/2 + Pi) - (other.Ri*65536/2 + other.Pi);
-          if (expr == 0) {
-            return La.CompareTo(other.La);
-          }
-          return expr;
-        }
-        else
-           throw new ArgumentException("Object is not a Gitem");
+//         Gitem other = I as Gitem;
+//         if (other != null) {
+//           var expr = (Ri*65536/2 + Pi) - (other.Ri*65536/2 + other.Pi);
+//           if (expr == 0) {
+//             return La.CompareTo(other.La);
+//           }
+//           return expr;
+//         }
+//         else
+//            throw new ArgumentException("Object is not a Gitem");
         
-    }
+//     }
 
-    public override int GetHashCode() // Generates warning without this function
-    {
-        return Ri.GetHashCode() ^ Pi.GetHashCode() ^ La.GetHashCode();
-    }
-}
+//     public override int GetHashCode() // Generates warning without this function
+//     {
+//         return Ri.GetHashCode() ^ Pi.GetHashCode() ^ La.GetHashCode();
+//     }
+//}
