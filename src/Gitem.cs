@@ -30,6 +30,7 @@ public class Gitem : IComparable
   public string La; // look ahead for LR(1)
   public bool Processed = false; //used for other procedures
 
+  public Gitem() { }
   public Gitem(short a, short b, string c) { Ri=a; Pi=b; La=c; }
   public Gitem(short a, short b) { Ri=a; Pi=b; La=string.Empty; }
   public Gitem(int a, int b, string c) { Ri=(Int16) a; Pi=(Int16) b; La = c; }

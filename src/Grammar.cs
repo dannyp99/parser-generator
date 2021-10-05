@@ -55,6 +55,7 @@ public class Grammar
     public int Linenum { get; set; } // only for meta parser
     public SortedSet<string> Nullable { get; set; }
     public Dictionary<string, SortedSet<string>> First { get; set; }
+    public Dictionary<string, HashSet<int>> Rulesfor { get; set; }
 
     public Grammar()
     {
@@ -64,6 +65,7 @@ public class Grammar
         Linenum = 0;
         Nullable = new SortedSet<string>();
         First = new Dictionary<string, SortedSet<string>>();
+        Rulesfor = new Dictionary<string, HashSet<int>>();
     }
 
     public bool NonTerminal(string s)
@@ -266,15 +268,25 @@ public class Grammar
         var changed = true;
         while (changed)
         { 
+            int rulei = 0;
             changed = false;
             foreach(var r in Rules)
             {
+
                 var addOrNot = true; // add or not
                 foreach(var g in r.Rhs)
                 {
                     if (g.Terminal || !Nullable.Contains(g.Sym)) { addOrNot = false; }
                 }
                 if (addOrNot) { changed = Nullable.Add(r.Lhs.Sym) || changed; }
+                HashSet<int> None;
+                if (Rulesfor.TryGetValue(r.Lhs.Sym, out None))
+                {
+                    Rulesfor.Add(r.Lhs.Sym, new HashSet<int>());
+                }
+                var ruleSet = Rulesfor[r.Lhs.Sym];
+                ruleSet.Add(rulei);
+                rulei += 1;
             }// for each rule
         }// while
     }
@@ -320,14 +332,27 @@ public class Grammar
                     done[i] = true; closed++; // process one item
                     int ri = state.Ri; // ri is the index of the rule
                     int pi = state.Pi; // position of next symbol after dot
+                    string la = state.La;
                     var rule = Rules[ri];
                     if (pi < rule.Rhs.Count && !rule.Rhs[pi].Terminal)
                     {
-                        // add all initial items for this non-terminal.
-                        //List<int> rs = rulesof.get(Ntind.get(rule.Rhs[pi].Sym));
-                        var rs = rule.Rhs[pi].Sym;
-                        //rs contains indices of all rules that has this nonterminal on the lhs
-
+                        var nti = rule.Rhs[pi];
+                        var lookaheads = FirstSeq(rule.Rhs.Skip(pi+1).ToList(), la);
+                        foreach (var rulent in Rulesfor[nti.Sym])
+                        {
+                            foreach (var lafollow in lookaheads)
+                            {
+                                var newItem = new Gitem 
+                                {
+                                    Ri = (Int16)rulent,
+                                    Pi = 0,
+                                    La = lafollow
+                                };
+                                //Ask how this compares to the state and how we should
+                                //implement with current data structures.
+                            }   
+                        }
+                        var rs = new List<int>(); //added to compile
                         foreach (int j in rs)
                         {
                             Gitem newitem = new Gitem(j, 0);
