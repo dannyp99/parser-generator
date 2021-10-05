@@ -308,9 +308,8 @@ public class Grammar
     public void StateClosure(SortedSet<Gitem> States)
     {
         // keeps track of indices of items already processed:
-        var done = new List<Boolean>();
+        var done = new List<Boolean>(new bool[States.Count]);
         int i = 0;
-        for (i = 0; i < States.Count; i++) done.Add(false);
         int closed = 0; // number of processed items
         while (closed < States.Count)
         {
@@ -333,12 +332,13 @@ public class Grammar
                         {
                             Gitem newitem = new Gitem(j, 0);
                             States.Add(newitem);
-                            int pgi = new List<Gitem>(States).FindIndex(x => x.Equals(newitem));
+                            int pgi = new List<Gitem>(States).BinarySearch(newitem); //created a sorted list and locate the state index;
                             // SortedInsert inserts using compareTo order
                             if (pgi >= 0) done[pgi] = false;
                         }// for each rule beginning with nonterminal
                     }//if
                 }// !done.get(i)
+                i++;
             }// for each item i in State
         }// while
     }//Stateclosure
@@ -377,12 +377,19 @@ public class Grammar
 internal class GitemComparer : IComparer<Gitem> {
     public int Compare(Gitem x, Gitem y)
     {
-        return (x.Ri*65536/2 + x.Pi) - (y.Ri*65536/2 + y.Pi);
+        var expr = (x.Ri*65536/2 + x.Pi) - (y.Ri*65536/2 + y.Pi);
+        if (expr == 0)
+        {
+            return x.La.CompareTo(y.La);
+        }
+        return expr;
     }
 }
+
 public class Gitem : IComparable {
     public short Ri { get; set; } // rule index into metaparser.Rules
     public short Pi { get; set; } // position of dot
+    public string La { get; set; }
 
     public Gitem(int ri, int pi)
     {
@@ -400,8 +407,13 @@ public class Gitem : IComparable {
         if (I == null) return 1;
 
         Gitem other = I as Gitem;
-        if (other != null)
-            return (Ri*65536/2 + Pi) - (other.Ri*65536/2 + other.Pi);
+        if (other != null) {
+          var expr = (Ri*65536/2 + Pi) - (other.Ri*65536/2 + other.Pi);
+          if (expr == 0) {
+            return La.CompareTo(other.La);
+          }
+          return expr;
+        }
         else
            throw new ArgumentException("Object is not a Gitem");
         
@@ -409,6 +421,6 @@ public class Gitem : IComparable {
 
     public override int GetHashCode() // Generates warning without this function
     {
-        return Ri.GetHashCode() + Pi.GetHashCode();
+        return Ri.GetHashCode() ^ Pi.GetHashCode() ^ La.GetHashCode();
     }
 }
