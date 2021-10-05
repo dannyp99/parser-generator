@@ -319,7 +319,7 @@ public class Grammar
     // generate slr closure
     public void StateClosure(SortedSet<Gitem> States) //change paramter to Grammar if moved to LR1State class
     {
-        while (States.Count(x => x.Processed) != States.Count) //while all states are not processed.
+        while (States.Any(x => !x.Processed)) //while any states is not processed.
         {
             var state = States.FirstOrDefault(x => !x.Processed); //returns first state that is not processed or null otherwise.
             if (state != null)
