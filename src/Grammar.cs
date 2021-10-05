@@ -317,54 +317,38 @@ public class Grammar
     }
 
     // generate slr closure
-    public void StateClosure(SortedSet<Gitem> States)
+    public void StateClosure(SortedSet<Gitem> States) //change paramter to Grammar if moved to LR1State class
     {
-        // keeps track of indices of items already processed:
-        var done = new List<Boolean>(new bool[States.Count]);
-        int i = 0;
-        int closed = 0; // number of processed items
-        while (closed < States.Count)
+        while (States.Count(x => x.Processed) != States.Count) //while all states are not processed.
         {
-            foreach (var state in States)
+            var state = States.FirstOrDefault(x => !x.Processed); //returns first state that is not processed or null otherwise.
+            if (state != null)
             {
-                if (!done[i])
+                state.Processed = true; // process one item
+                int ri = state.Ri; // ri is the index of the rule
+                int pi = state.Pi; // position of next symbol after dot
+                string la = state.La;
+                var rule = Rules[ri];
+                var lhs = rule.Lhs.Sym;
+                //insert into state or this (aka self)?
+                if (pi < rule.Rhs.Count && !rule.Rhs[pi].Terminal)
                 {
-                    done[i] = true; closed++; // process one item
-                    int ri = state.Ri; // ri is the index of the rule
-                    int pi = state.Pi; // position of next symbol after dot
-                    string la = state.La;
-                    var rule = Rules[ri];
-                    if (pi < rule.Rhs.Count && !rule.Rhs[pi].Terminal)
+                    var nti = rule.Rhs[pi];
+                    var lookaheads = FirstSeq(rule.Rhs.Skip(pi+1).ToList(), la);
+                    foreach (var rulent in Rulesfor[nti.Sym])
                     {
-                        var nti = rule.Rhs[pi];
-                        var lookaheads = FirstSeq(rule.Rhs.Skip(pi+1).ToList(), la);
-                        foreach (var rulent in Rulesfor[nti.Sym])
+                        foreach (var lafollow in lookaheads)
                         {
-                            foreach (var lafollow in lookaheads)
+                            var newItem = new Gitem(rulent, 0, lafollow);
+                            if (!States.Contains(newItem)) 
                             {
-                                var newItem = new Gitem 
-                                {
-                                    Ri = (Int16)rulent,
-                                    Pi = 0,
-                                    La = lafollow
-                                };
-                                //Ask how this compares to the state and how we should
-                                //implement with current data structures.
-                            }   
-                        }
-                        var rs = new List<int>(); //added to compile
-                        foreach (int j in rs)
-                        {
-                            Gitem newitem = new Gitem(j, 0);
-                            States.Add(newitem);
-                            int pgi = new List<Gitem>(States).BinarySearch(newitem); //created a sorted list and locate the state index;
-                            // SortedInsert inserts using compareTo order
-                            if (pgi >= 0) done[pgi] = false;
-                        }// for each rule beginning with nonterminal
-                    }//if
-                }// !done.get(i)
-                i++;
-            }// for each item i in State
+                                States.Add(newItem);
+                                //Ask how if the check is needed and if this should change to State addition
+                            }
+                        }//foreach lookahead
+                    }// foreach Rule of nonterminals
+                }//if
+            }// not processed
         }// while
     }//Stateclosure
 
