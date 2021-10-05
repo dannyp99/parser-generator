@@ -4,7 +4,7 @@ using System.Collections;
 using System.Linq;
 
 
-public class Gitem // : IComparable<Gitem>??
+public class Gitem : IComparable
 {
   /* This is Java code and have to change it around to IComparer C# 
   public int compareTo(Gitem I)
@@ -13,11 +13,15 @@ public class Gitem // : IComparable<Gitem>??
   }
   */ 
 
-  public class GitemComparer : IComparer<Gitem>
+  internal class GitemComparer : IComparer<Gitem>
   {
-    int IComparer<Gitem>.Compare(Gitem x, Gitem y)
+    public int Compare(Gitem x, Gitem y)
     {
-      return (x.ri*65536/2 + x.pi + x.la) - (y.ri*65536/2 + y.pi + y.la); 
+      var expr = (x.ri*65536/2 + x.pi) - (y.ri*65536/2 + y.pi); 
+      if (expr == 0){
+        return x.la.CompareTo(y.la);
+      }
+      return expr;
     }
   }
 
@@ -29,13 +33,33 @@ public class Gitem // : IComparable<Gitem>??
   public Gitem(short a, short b, short c) { ri=a; pi=b; la=c; }
   public Gitem(int a, int b, int c) { ri=(short) a; pi=(short) b; la=(short) c;}
     
-  public bool equals(Object b)
+  public override bool Equals(Object b)
   {
     // ????  should Gitem also implement IComparable? 
     // this was for sorint we can easily pass in the comparer 
     // but for direct comparison we can use compareTo? Is that redundant?
-    GitemComparer gicomp = new GitemComparer(); 
-    return (gicomp.Compare(this,(Gitem)b)) == 0; //compareTo((Gitem)b) == 0;
+    return CompareTo((Gitem)b) == 0; //compareTo((Gitem)b) == 0;
+  }
+
+  public int CompareTo(object I)
+  {
+    if (I == null) return 1;
+
+    Gitem other = I as Gitem;
+    if (other != null){
+      var expr = (ri*65536/2 + pi) - (other.ri*65536/2 + other.pi);
+      if ( expr == 0){
+        return la.CompareTo(other.la);
+      }
+      return expr;
+    }
+    else
+      throw new ArgumentException("Object is not gitem");
+  }
+
+  public override int GetHashCode()
+  {
+    return ri.GetHashCode() ^ pi.GetHashCode() ^ la.GetHashCode();
   }
 
   public string toString()
