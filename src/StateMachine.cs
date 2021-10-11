@@ -83,4 +83,37 @@ public class StateMachine
             }
         }
     }//makegotos
+    public void AddState(Gitem state, short psi, string nextSym)
+    {
+        var indexsave = States.Count; // getting the index of the state
+        int toAdd = indexsave;
+        for (int i = 0; i < States.Count; i++)
+        {
+            if (state.Equals(States[i]))
+            {
+                toAdd = i;
+                break;
+            }
+        }
+
+        if (toAdd == indexsave)
+        {
+            SortedSet<Gitem> tempSet = new SortedSet<Gitem>();
+            tempSet.Add(state);
+
+            States.Add(tempSet);
+            FSM.Add(new Dictionary<string, IStateAction>());
+        }
+
+        GrammarSym gSymbol = Grammar.Symbols[nextSym];
+        IStateAction newAction;
+        if (gSymbol.Terminal)
+        {
+            newAction = new Shift(toAdd);
+        }
+        else {
+            newAction = new GotoState(toAdd);
+        }
+        FSM[psi].Add(nextSym, newAction);
+    } // End AddState
 }
