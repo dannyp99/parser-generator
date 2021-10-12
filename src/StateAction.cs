@@ -1,6 +1,6 @@
 public interface IStateAction
 {
-    void DoIt(AbsParser absParser);
+  void DoIt(AbsParser absParser);
 }
 
 public abstract class AbsParser
@@ -10,17 +10,12 @@ public abstract class AbsParser
 
 public class Reduce : IStateAction
 {
-    public int Rulei {get; set; } // rule index (for an arraylist called Rules) to reduce to
-    public Reduce(int ri)
-    {
-      Rulei = ri;
-    }
-    public void DoIt(AbsParser absParser) {}
-
-    public override string ToString() 
-    {
-      return "Reduce";
-    }
+  public int Rulei {get; set; } // rule index (for an arraylist called Rules) to reduce to
+  public Reduce(int ri)
+  {
+    Rulei = ri;
+  }
+  public void DoIt(AbsParser absParser) {}
 }
 
 public class Shift : IStateAction

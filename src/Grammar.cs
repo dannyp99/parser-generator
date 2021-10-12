@@ -364,6 +364,7 @@ public class Grammar
         }
         g.ComputeFirst();
         g.PrintFirst();
+        //g.ComputeNullable();
         g.PrintNullable();
 
         
