@@ -133,7 +133,7 @@ public class StateMachine
         short closed = 0;
         while(closed < States.Count){ 
             makegotos(closed);
-            closed +=5;
+            closed +=1;
             Console.WriteLine(closed + " : " + States.Count);
         }
 
