@@ -17,7 +17,12 @@ public class GrammarSym {
         Label = string.Empty;
         FsharpType = "String";
         Precedence = 20;
-    }    
+    }
+
+    public override string ToString()
+    {
+        return $"{Sym}: {Label} \n\t Precedence: {Precedence}";
+    }
 }
 
 public class GrammarRule {
@@ -298,6 +303,7 @@ public class Grammar
                 nullable = false;
                 firsts.Add(sym.Sym);
             } else {
+
                 foreach (string t in First[sym.Sym]) {
                     firsts.Add(t);
                 }

@@ -113,7 +113,8 @@ public class StateMachine
         }
         if (toAdd == indexsave)
         {
-            Console.WriteLine("Adding state:" + state);
+            Console.WriteLine("Adding state:" );
+            PrintSet(state);
             States.Add(state);
             FSM.Add(new Dictionary<string, IStateAction>());
         }
@@ -127,16 +128,19 @@ public class StateMachine
         else {
             newAction = new GotoState(toAdd);
         }
-        FSM[psi].Add(nextSym, newAction);
+        if (FSM[psi].ContainsKey(nextSym)) {
+            FSM[psi][nextSym] =  newAction;
+        }
+        else {
+            FSM[psi].Add(nextSym, newAction);
+        }
     } // End AddState
 
     public void generatefsm()
     {
         SortedSet<Gitem> startState = new SortedSet<Gitem>();
         startState.Add( new Gitem(Grammar.Rules.Count-1,0,"EOF") );
-        Console.WriteLine("Making Closure");
         Grammar.StateClosure(startState); 
-        Console.WriteLine("Completed Closure");
 
         States.Add(startState);
         FSM.Add(new Dictionary<string,IStateAction>());
@@ -148,6 +152,14 @@ public class StateMachine
             //Console.WriteLine(closed + " : " + States.Count);
         }
 
+    }
+
+    public void PrintSet(SortedSet<Gitem> set)
+    {
+        foreach (var item in set)
+        {
+         Console.WriteLine("    " + item);   
+        }
     }
     public void prettyPrintFSM(SortedSet<Gitem> states, Grammar grammar)    
     {   
@@ -185,28 +197,15 @@ public class StateMachine
         }
         g.ComputeFirst();
         g.PrintFirst();
-        //g.ComputeNullable();
         g.PrintNullable();
 
         
 
-        var test_seq = new List<GrammarSym>();
-        test_seq.Add(new GrammarSym("S", false));
-        test_seq.Add(new GrammarSym("N", false));
-        test_seq.Add(new GrammarSym("T", true));
-
-        var fseq = g.FirstSeq(test_seq, "END");
-        Console.WriteLine("Firstseq:");
-        foreach (var i in fseq) {
-            Console.WriteLine(i);
-        }
         var itemSet = new SortedSet<Gitem>(new GitemComparer());
-        itemSet.Add(new Gitem(0,0, "S"));
-       
         g.StateClosure(itemSet);
         StateMachine sm = new StateMachine(g);
         sm.generatefsm();
-        sm.prettyPrintFSM(itemSet, g);
-        Console.WriteLine(itemSet.Count);
+        sm.prettyPrintFSM(sm.States[0], g);
+        Console.WriteLine(sm.States.Count);
     }
 }
