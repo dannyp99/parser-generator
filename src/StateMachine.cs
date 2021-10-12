@@ -90,6 +90,16 @@ public class StateMachine
             }
         }
     }//makegotos
+
+    private bool stateeq(SortedSet<Gitem> s1, SortedSet<Gitem> s2)
+    {
+        if (s1.Count != s2.Count) return false;
+        foreach (Gitem x in s1) {
+            if (!s2.Contains(x)) 
+                return false;
+        }
+        return true;
+    }
     public void AddState(SortedSet<Gitem> state, short psi, string nextSym)
     {
 
@@ -97,19 +107,13 @@ public class StateMachine
         int toAdd = indexsave;
         for (int i = 0; i < States.Count; i++)
         {
-            foreach(Gitem g in state){ 
-                foreach (var stateGitem in States[i])
-                {  
-                    if (g.Equals(stateGitem))
-                    {
-                        toAdd = i;
-                        break;
-                    }
-                }
+            if (stateeq(state,States[i])) {
+                toAdd=i; break;
             }
         }
         if (toAdd == indexsave)
         {
+            Console.WriteLine("Adding state:" + state);
             States.Add(state);
             FSM.Add(new Dictionary<string, IStateAction>());
         }
