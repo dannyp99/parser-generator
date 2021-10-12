@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using State;
 
 public class StateMachine
 {
@@ -16,7 +15,8 @@ public class StateMachine
         StateLookup = new Dictionary<string, HashSet<int>>(1024);
         FSM = new List<Dictionary<string, IStateAction>>(8*1024);     
     }
-    public void makegotos(int si)
+
+    public void makegotos(short si)
     {
         SortedSet<Gitem> state = States[si];
         var newStates = new Dictionary<string, SortedSet<Gitem>>();
@@ -34,45 +34,47 @@ public class StateMachine
                 }
                 SortedSet<Gitem> symState = newStates[nextSym];
                 var newItem = new Gitem(item.Ri, item.Pi+1, item.La);
-                var leftSym = Grammar.Rules[item.Ri].Lhs.Sym;
                 symState.Add(newItem);
             }
             else {
-                IStateAction currentAction = FSM[si][item.La];
+                IStateAction currentAction;
+                FSM[si].TryGetValue(item.La, out currentAction);
                 var change = true;
-                if (currentAction is Reduce r && r.Rulei < item.Ri)//simulated pattern matching
-                {
-                    change = false;
-                    Console.WriteLine("Reduce-Reduce conflict!");
-                    //PrintState()
-                }
-                else if (currentAction is Reduce r2 && r2.Rulei > item.Ri)
-                {
-                    change = false;
-                    Console.WriteLine("Reduce-Reduce conflict!");
-                    //PrintState()
-                }
-                else if (currentAction is Accept)
-                {
-                    change = false;
-                }
-                else if (currentAction is Shift)
-                {
-                    var ruleRiPrec = Grammar.Rules[item.Ri].Precedence;
-                    var symRiPrec = Grammar.Symbols[item.La].Precedence;
-                    if (ruleRiPrec == symRiPrec && ruleRiPrec < 0) {change = false;}// right associative
-                    else if (Math.Abs(symRiPrec) > Math.Abs(ruleRiPrec)) {change = false;}// still shift
-                }// pattern matching done
-                if (change)
-                {
-                    if (item.Ri == Grammar.Rules.Count - 1 && item.La == "EOF")
+                if(currentAction != null) {
+                    if (currentAction is Reduce r && r.Rulei < item.Ri)//simulated pattern matching
+                    {   
+                        change = false;
+                        Console.WriteLine("Reduce-Reduce conflict!");
+                        //PrintState()
+                    }
+                    else if (currentAction is Reduce r2 && r2.Rulei > item.Ri)
                     {
-                        FSM[si].Add(item.La, new Accept());
+                        change = false;
+                        Console.WriteLine("Reduce-Reduce conflict!");
+                        //PrintState()
                     }
-                    else {
-                        FSM[si].Add(item.La, new Reduce(item.Ri));
+                    else if (currentAction is Accept)
+                    {
+                        change = false;
                     }
-                }// add IStateAction
+                    else if (currentAction is Shift)
+                    {
+                        var ruleRiPrec = Grammar.Rules[item.Ri].Precedence;
+                        var symRiPrec = Grammar.Symbols[item.La].Precedence;
+                        if (ruleRiPrec == symRiPrec && ruleRiPrec < 0) {change = false;}// right associative
+                        else if (Math.Abs(symRiPrec) > Math.Abs(ruleRiPrec)) {change = false;}// still shift
+                    }// pattern matching done
+                    if (change)
+                    {
+                        if (item.Ri == Grammar.Rules.Count - 1 && item.La == "EOF")
+                        {
+                            FSM[si].Add(item.La, new Accept());
+                        }
+                        else {
+                            FSM[si].Add(item.La, new Reduce(item.Ri));
+                        }
+                    }// add IStateAction
+                }
             }//set reduce action
         }// for each item
         foreach (var key in keyList)
@@ -80,28 +82,28 @@ public class StateMachine
             if(newStates.ContainsKey(key))
             {
                 Grammar.StateClosure(newStates[key]);//Fill state
+                AddState(newStates[key],si,key);
             }
         }
     }//makegotos
-    public void AddState(Gitem state, short psi, string nextSym)
+    public void AddState(SortedSet<Gitem> state, short psi, string nextSym)
     {
+
         var indexsave = States.Count; // getting the index of the state
         int toAdd = indexsave;
         for (int i = 0; i < States.Count; i++)
         {
-            if (state.Equals(States[i]))
-            {
-                toAdd = i;
-                break;
+            foreach(Gitem g in state){
+                if (state.Equals(States[i]))
+                {
+                    toAdd = i;
+                    break;
+                }
             }
         }
-
         if (toAdd == indexsave)
         {
-            SortedSet<Gitem> tempSet = new SortedSet<Gitem>();
-            tempSet.Add(state);
-
-            States.Add(tempSet);
+            States.Add(state);
             FSM.Add(new Dictionary<string, IStateAction>());
         }
 
@@ -116,4 +118,37 @@ public class StateMachine
         }
         FSM[psi].Add(nextSym, newAction);
     } // End AddState
+
+    public void generatefsm()
+    {
+        SortedSet<Gitem> startState = new SortedSet<Gitem>();
+        startState.Add( new Gitem(Grammar.Rules.Count-1,0,"EOF") );
+        Console.WriteLine("Making Closure");
+        Grammar.StateClosure(startState); 
+        Console.WriteLine("Completed Closure");
+
+        States.Add(startState);
+        FSM.Add(new Dictionary<string,IStateAction>());
+
+        short closed = 0;
+        while(closed < States.Count){ 
+            makegotos(closed);
+            closed +=1;
+            Console.WriteLine(closed + " : " + States.Count);
+        }
+
+    }
+    public void prettyPrintFSM()    
+    {   
+        int i = 0;
+        foreach(var state in FSM) {
+            Console.WriteLine("State Number:" + i);
+            foreach(var action in state) {
+                
+                Console.WriteLine("State Action: " + action.Key + " : " +action.Value);
+            }
+            Console.WriteLine();
+            i++;
+        }
+    }
 }

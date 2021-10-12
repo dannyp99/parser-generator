@@ -5,7 +5,7 @@ all: lib
 
 lib: $(BUILD)
 	mcs -target:library -out:$(BUILD)/Gitem.dll Gitem.cs
-	mcs -r:$(BUILD)/Gitem.dll -target:library -out:$(BUILD)/Grammar.dll Grammar.cs
+	mcs -r:$(BUILD)/Gitem.dll -target:library -out:$(BUILD)/Grammar.dll Grammar.cs StateMachine.cs
 	mcs -r:$(BUILD)/Gitem.dll,$(BUILD)/Grammar.dll  -target:library -out:$(BUILD)/State.dll StateAction.cs StateMachine.cs
 
 $(BUILD):

@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using State;
 
 public class GrammarSym {
     public string Sym { get; set; }
@@ -278,7 +277,7 @@ public class Grammar
                 }
                 if (addOrNot) { changed = Nullable.Add(r.Lhs.Sym) || changed; }
                 HashSet<int> None;
-                if (Rulesfor.TryGetValue(r.Lhs.Sym, out None))
+                if (!Rulesfor.TryGetValue(r.Lhs.Sym, out None))
                 {
                     Rulesfor.Add(r.Lhs.Sym, new HashSet<int>());
                 }
@@ -365,8 +364,9 @@ public class Grammar
         }
         g.ComputeFirst();
         g.PrintFirst();
-        g.ComputeNullable();
         g.PrintNullable();
+
+        
 
         var test_seq = new List<GrammarSym>();
         test_seq.Add(new GrammarSym("S", false));
@@ -380,7 +380,19 @@ public class Grammar
         }
         var itemSet = new SortedSet<Gitem>(new GitemComparer());
         itemSet.Add(new Gitem(0,0, "S"));
+       
         g.StateClosure(itemSet);
+        StateMachine sm = new StateMachine(g);
+        sm.generatefsm();
+        sm.prettyPrintFSM();
+        /*
+        Console.WriteLine("State Closure:");
+        foreach(Gitem i in itemSet)
+        {
+            Console.WriteLine(i);
+        }*/
+
+
         
     }
 }// Grammar class

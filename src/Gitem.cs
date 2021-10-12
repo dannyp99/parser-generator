@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Collections;
 using System.Linq;
 
-namespace State
-{
   public class GitemComparer : IComparer<Gitem>
   {
       public int Compare(Gitem x, Gitem y)
@@ -74,4 +72,3 @@ namespace State
     // may want to write prettyprint function
     // TODO: Print Item
   } //Gitem
-}

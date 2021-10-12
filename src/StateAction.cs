@@ -16,6 +16,11 @@ public class Reduce : IStateAction
       Rulei = ri;
     }
     public void DoIt(AbsParser absParser) {}
+
+    public override string ToString() 
+    {
+      return "Reduce";
+    }
 }
 
 public class Shift : IStateAction
@@ -27,6 +32,11 @@ public class Shift : IStateAction
     Nextstate = nextState;
   }
   public void DoIt(AbsParser absParser) {}
+
+  public override string ToString() 
+  {
+    return "Shift";
+  }
 }
 
 public class GotoState : IStateAction
@@ -37,8 +47,18 @@ public class GotoState : IStateAction
     Nsi = nsi;
   }
   public void DoIt(AbsParser absParser) {}
+
+  public override string ToString() 
+  {
+    return "GotoState";
+  }
 }
 public class Accept : IStateAction
 {
   public void DoIt(AbsParser absParser) {}
+
+  public override string ToString() 
+  {
+    return "Accept";
+  }
 }
