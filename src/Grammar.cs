@@ -45,7 +45,7 @@ public class GrammarRule {
 
 public class Grammar
 {
-    private bool TRACE = false;
+    public bool TRACE = false;
     public Dictionary<string, GrammarSym> Symbols { get; set; }
     public List<GrammarRule> Rules { get; set; }
     public string TopSym { get; set; }
@@ -348,52 +348,4 @@ public class Grammar
             }// not processed
         }// while
     }//Stateclosure
-
-    // for testing ParseStdin
-    public static void Main(string[] argv) {
-        Grammar g = new Grammar();
-        if (argv.Length > 0) {
-            g.TRACE = true;
-        }
-        g.ParseStdin();
-        if (g.TRACE) {Console.Write("\n");}
-        Console.WriteLine("info:");
-        Console.WriteLine("topsym: " + g.TopSym);
-        foreach (var rule in g.Rules) {
-            rule.PrintRule();
-        }
-        g.ComputeFirst();
-        g.PrintFirst();
-        //g.ComputeNullable();
-        g.PrintNullable();
-
-        
-
-        var test_seq = new List<GrammarSym>();
-        test_seq.Add(new GrammarSym("S", false));
-        test_seq.Add(new GrammarSym("N", false));
-        test_seq.Add(new GrammarSym("T", true));
-
-        var fseq = g.FirstSeq(test_seq, "END");
-        Console.WriteLine("Firstseq:");
-        foreach (var i in fseq) {
-            Console.WriteLine(i);
-        }
-        var itemSet = new SortedSet<Gitem>(new GitemComparer());
-        itemSet.Add(new Gitem(0,0, "S"));
-       
-        g.StateClosure(itemSet);
-        StateMachine sm = new StateMachine(g);
-        sm.generatefsm();
-        sm.prettyPrintFSM();
-        /*
-        Console.WriteLine("State Closure:");
-        foreach(Gitem i in itemSet)
-        {
-            Console.WriteLine(i);
-        }*/
-
-
-        
-    }
 }// Grammar class

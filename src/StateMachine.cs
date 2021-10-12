@@ -56,6 +56,7 @@ public class StateMachine
                     else if (currentAction is Accept)
                     {
                         change = false;
+                        Console.WriteLine("Accept");
                     }
                     else if (currentAction is Shift)
                     {
@@ -63,18 +64,21 @@ public class StateMachine
                         var symRiPrec = Grammar.Symbols[item.La].Precedence;
                         if (ruleRiPrec == symRiPrec && ruleRiPrec < 0) {change = false;}// right associative
                         else if (Math.Abs(symRiPrec) > Math.Abs(ruleRiPrec)) {change = false;}// still shift
+                    }
+                    else {
+                        Console.WriteLine("Pattern Match Nothing");
                     }// pattern matching done
-                    if (change)
-                    {
-                        if (item.Ri == Grammar.Rules.Count - 1 && item.La == "EOF")
-                        {
-                            FSM[si].Add(item.La, new Accept());
-                        }
-                        else {
-                            FSM[si].Add(item.La, new Reduce(item.Ri));
-                        }
-                    }// add IStateAction
                 }
+                if (change)
+                {
+                    if (item.Ri == Grammar.Rules.Count - 1 && item.La == "EOF")
+                    {
+                        FSM[si].Add(item.La, new Accept());
+                    }
+                    else {
+                        FSM[si].Add(item.La, new Reduce(item.Ri));
+                    }
+                }// add IStateAction
             }//set reduce action
         }// for each item
         foreach (var key in keyList)
@@ -93,11 +97,14 @@ public class StateMachine
         int toAdd = indexsave;
         for (int i = 0; i < States.Count; i++)
         {
-            foreach(Gitem g in state){
-                if (state.Equals(States[i]))
-                {
-                    toAdd = i;
-                    break;
+            foreach(Gitem g in state){ 
+                foreach (var stateGitem in States[i])
+                {  
+                    if (g.Equals(stateGitem))
+                    {
+                        toAdd = i;
+                        break;
+                    }
                 }
             }
         }
@@ -134,21 +141,68 @@ public class StateMachine
         while(closed < States.Count){ 
             makegotos(closed);
             closed +=1;
-            Console.WriteLine(closed + " : " + States.Count);
+            //Console.WriteLine(closed + " : " + States.Count);
         }
 
     }
-    public void prettyPrintFSM()    
+    public void prettyPrintFSM(SortedSet<Gitem> states, Grammar grammar)    
     {   
-        int i = 0;
-        foreach(var state in FSM) {
-            Console.WriteLine("State Number:" + i);
-            foreach(var action in state) {
-                
-                Console.WriteLine("State Action: " + action.Key + " : " +action.Value);
+        Gitem state = new Gitem();
+        foreach (var item in states) { state = item; break; }
+        Console.WriteLine($"state {state}:");
+        foreach (Gitem item in states)
+        {
+            var lhsSym = grammar.Rules[item.Ri].Lhs.Sym;
+            var rhs = grammar.Rules[item.Ri].Rhs;
+            Console.Write($"    ({item.Ri}) {lhsSym} --> ");
+            int i = 0;
+            foreach (var gsym in rhs)
+            {
+                if (i == item.Pi) { Console.Write("."); }
+                Console.Write($"{gsym.Sym} ");
+                i++;
             }
-            Console.WriteLine();
-            i++;
+            if (i == item.Pi) { Console.Write(". "); }
+            Console.WriteLine($", {item.La}");
         }
+    }
+
+        public static void Main(string[] argv) {
+        Grammar g = new Grammar();
+        if (argv.Length > 0) {
+            g.TRACE = true;
+        }
+        g.ParseStdin();
+        if (g.TRACE) {Console.Write("\n");}
+        Console.WriteLine("info:");
+        Console.WriteLine("topsym: " + g.TopSym);
+        foreach (var rule in g.Rules) {
+            rule.PrintRule();
+        }
+        g.ComputeFirst();
+        g.PrintFirst();
+        //g.ComputeNullable();
+        g.PrintNullable();
+
+        
+
+        var test_seq = new List<GrammarSym>();
+        test_seq.Add(new GrammarSym("S", false));
+        test_seq.Add(new GrammarSym("N", false));
+        test_seq.Add(new GrammarSym("T", true));
+
+        var fseq = g.FirstSeq(test_seq, "END");
+        Console.WriteLine("Firstseq:");
+        foreach (var i in fseq) {
+            Console.WriteLine(i);
+        }
+        var itemSet = new SortedSet<Gitem>(new GitemComparer());
+        itemSet.Add(new Gitem(0,0, "S"));
+       
+        g.StateClosure(itemSet);
+        StateMachine sm = new StateMachine(g);
+        sm.generatefsm();
+        sm.prettyPrintFSM(itemSet, g);
+        Console.WriteLine(itemSet.Count);
     }
 }
