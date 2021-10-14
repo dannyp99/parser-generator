@@ -2,16 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-public class AbsynType {
-
-}
-
-public class GrammarSym<AbsynType> {
+public class GrammarSym {
     public string Sym { get; set; }
     public string FsharpType { get; set; }
     public bool Terminal { get; set; }
     public string Label { get; set; }
-    public AbsynType value { get; set; }
+    public object value { get; set; }
     public int Precedence { get; set; }
 
     public GrammarSym(string s, bool isTerminal)
@@ -21,13 +17,19 @@ public class GrammarSym<AbsynType> {
         Label = string.Empty;
         FsharpType = "String";
         Precedence = 20;
-    }    
+    }
+
+    public override string ToString()
+    {
+        return $"{Sym}: {Label} \n\t Precedence: {Precedence}";
+    }
 }
 
 public class GrammarRule {
-    public GrammarSym<AbsynType> Lhs { get; set; }
-    public List<GrammarSym<AbsynType>> Rhs { get; set; }
+    public GrammarSym Lhs { get; set; }
+    public List<GrammarSym> Rhs { get; set; }
     public string Action { get; set; }
+    public int Precedence { get; set; }
     public string Operation { get; set; }
     
     public void PrintRule()
@@ -48,22 +50,24 @@ public class GrammarRule {
 
 public class Grammar
 {
-    private bool TRACE = false;
-    public Dictionary<string, GrammarSym<AbsynType>> Symbols { get; set; }
+    public bool TRACE = false;
+    public Dictionary<string, GrammarSym> Symbols { get; set; }
     public List<GrammarRule> Rules { get; set; }
     public string TopSym { get; set; }
     public int Linenum { get; set; } // only for meta parser
     public SortedSet<string> Nullable { get; set; }
     public Dictionary<string, SortedSet<string>> First { get; set; }
+    public Dictionary<string, HashSet<int>> Rulesfor { get; set; }
 
     public Grammar()
     {
-        Symbols = new Dictionary<string, GrammarSym<AbsynType>>();
+        Symbols = new Dictionary<string, GrammarSym>();
         Rules = new List<GrammarRule>();
         TopSym = string.Empty;
         Linenum = 0;
         Nullable = new SortedSet<string>();
         First = new Dictionary<string, SortedSet<string>>();
+        Rulesfor = new Dictionary<string, HashSet<int>>();
     }
 
     public bool NonTerminal(string s)
@@ -122,7 +126,7 @@ public class Grammar
                         Console.WriteLine("'" + tok + "'");
                     }
                 }
-                GrammarSym<AbsynType> newTerm;
+                GrammarSym newTerm;
                 switch (toks[0]) {
                     case "EOF":
                         atEOF = true;
@@ -130,17 +134,17 @@ public class Grammar
                     case "terminal":          
                         for(int i = 1; i < toks.Length; i++)
                         {
-                        newTerm = new GrammarSym<AbsynType>(toks[i],true);
+                        newTerm = new GrammarSym(toks[i],true);
                         Symbols.Add(toks[i], newTerm);
                         }
                         break;
                     case "typedterminal":
-                        newTerm = new GrammarSym<AbsynType>(toks[1],true);
+                        newTerm = new GrammarSym(toks[1],true);
                         newTerm.FsharpType = toks[2];
                         Symbols.Add(toks[1],newTerm);
                         break;
                    case "nonterminal":
-                        newTerm = new GrammarSym<AbsynType>(toks[1],false);
+                        newTerm = new GrammarSym(toks[1],false);
                         newTerm.FsharpType = toks[2];
                         Symbols.Add(toks[1],newTerm);
                         break;
@@ -154,7 +158,7 @@ public class Grammar
                         if(!int.TryParse(toks[2],out preclevel)) { preclevel = 20; }
                         if(toks[0] == "right") { preclevel = -1 * preclevel; }
 
-                        GrammarSym<AbsynType> gsym;
+                        GrammarSym gsym;
                         if(Symbols.TryGetValue(toks[2], out gsym)) { gsym.Precedence = preclevel; }
 
                         if (TRACE) {Console.WriteLine("left/right {0} {1}",toks[1],preclevel);}
@@ -162,8 +166,8 @@ public class Grammar
                     default:
                         if (NonTerminal(toks[0]) && toks[1] == "-->") {
                             if (TRACE) {Console.WriteLine("Rule");}
-                            GrammarSym<AbsynType> lhsSym = Symbols[toks[0]];
-                            List<GrammarSym<AbsynType>> rhsSyms = new List<GrammarSym<AbsynType>>();
+                            GrammarSym lhsSym = Symbols[toks[0]];
+                            List<GrammarSym> rhsSyms = new List<GrammarSym>();
 
                             foreach (string tok in toks.Skip(2)) {
                                 if (TRACE) {Console.WriteLine("  " + tok);}
@@ -173,7 +177,7 @@ public class Grammar
 
                                 string[] tokLab = tok.Split(':');
                                 // TODO handle exception for unrecognized symbol
-                                GrammarSym<AbsynType> newSym = Symbols[tokLab[0]];
+                                GrammarSym newSym = Symbols[tokLab[0]];
                                 if (tokLab.Length > 1) {
                                     newSym.Label = tokLab[1];
                                 }
@@ -195,14 +199,14 @@ public class Grammar
         }
 
         
-        var startnt = new GrammarSym<AbsynType>("START",false);
-        GrammarSym<AbsynType> eofterm = new GrammarSym<AbsynType>("EOF",true);
+        var startnt = new GrammarSym("START",false);
+        GrammarSym eofterm = new GrammarSym("EOF",true);
         Symbols.Add("START", startnt);
         Symbols.Add("EOF", eofterm);
         var topgsym = Symbols[TopSym];
         var startRule = new GrammarRule();
         startRule.Lhs = startnt;
-        GrammarSym<AbsynType>[] temp = {topgsym,eofterm};
+        GrammarSym[] temp = {topgsym,eofterm};
         startRule.Rhs = temp.ToList();
 
         Rules.Add(startRule);
@@ -212,7 +216,7 @@ public class Grammar
 
     public void ComputeFirst()
     {
-	ComputeNullable();
+	    ComputeNullable();
         var FIRST = new Dictionary<string, SortedSet<string>>();
         var changed = true;
         while (changed)
@@ -266,29 +270,40 @@ public class Grammar
         var changed = true;
         while (changed)
         { 
+            int rulei = 0;
             changed = false;
             foreach(var r in Rules)
             {
+
                 var addOrNot = true; // add or not
                 foreach(var g in r.Rhs)
                 {
                     if (g.Terminal || !Nullable.Contains(g.Sym)) { addOrNot = false; }
                 }
                 if (addOrNot) { changed = Nullable.Add(r.Lhs.Sym) || changed; }
+                HashSet<int> None;
+                if (!Rulesfor.TryGetValue(r.Lhs.Sym, out None))
+                {
+                    Rulesfor.Add(r.Lhs.Sym, new HashSet<int>());
+                }
+                var ruleSet = Rulesfor[r.Lhs.Sym];
+                ruleSet.Add(rulei);
+                rulei += 1;
             }// for each rule
         }// while
     }
 
     // lookahead will always be a terminal
     // TODO verify: no need to iterate, prefer hash set
-    public HashSet<string> FirstSeq(List<GrammarSym<AbsynType>> seq, string la) {
+    public HashSet<string> FirstSeq(List<GrammarSym> seq, string la) {
         bool nullable = true;
         var firsts = new HashSet<string>();
-        foreach (GrammarSym<AbsynType> sym in seq) {
+        foreach (GrammarSym sym in seq) {
             if (sym.Terminal) {
                 nullable = false;
                 firsts.Add(sym.Sym);
             } else {
+
                 foreach (string t in First[sym.Sym]) {
                     firsts.Add(t);
                 }
@@ -304,33 +319,39 @@ public class Grammar
         return firsts;
     }
 
-    // for testing ParseStdin
-    public static void Main(string[] argv) {
-        Grammar g = new Grammar();
-        if (argv.Length > 0) {
-            g.TRACE = true;
-        }
-        g.ParseStdin();
-        if (g.TRACE) {Console.Write("\n");}
-        Console.WriteLine("info:");
-        Console.WriteLine("topsym: " + g.TopSym);
-        foreach (var rule in g.Rules) {
-            rule.PrintRule();
-        }
-        g.ComputeFirst();
-        g.PrintFirst();
-        g.ComputeNullable();
-        g.PrintNullable();
-
-        var test_seq = new List<GrammarSym<AbsynType>>();
-        test_seq.Add(new GrammarSym<AbsynType>("S", false));
-        test_seq.Add(new GrammarSym<AbsynType>("N", false));
-        test_seq.Add(new GrammarSym<AbsynType>("T", true));
-
-        var fseq = g.FirstSeq(test_seq, "END");
-        Console.WriteLine("Firstseq:");
-        foreach (var i in fseq) {
-            Console.WriteLine(i);
-        }
-    }
-}
+    // generate lr(1) closure
+    public void StateClosure(SortedSet<Gitem> States) //change paramter to Grammar if moved to LR1State class
+    {
+        while (States.Any(x => !x.Processed)) //while any states is not processed.
+        {
+            var state = States.FirstOrDefault(x => !x.Processed); //returns first state that is not processed or null otherwise.
+            if (state != null)
+            {
+                state.Processed = true; // process one item
+                int ri = state.Ri; // ri is the index of the rule
+                int pi = state.Pi; // position of next symbol after dot
+                string la = state.La;
+                var rule = Rules[ri];
+                var lhs = rule.Lhs.Sym;
+                //insert into state or this (aka self)?
+                if (pi < rule.Rhs.Count && !rule.Rhs[pi].Terminal)
+                {
+                    var nti = rule.Rhs[pi];
+                    var lookaheads = FirstSeq(rule.Rhs.Skip(pi+1).ToList(), la);
+                    foreach (var rulent in Rulesfor[nti.Sym])
+                    {
+                        foreach (var lafollow in lookaheads)
+                        {
+                            var newItem = new Gitem(rulent, 0, lafollow);
+                            if (!States.Contains(newItem)) 
+                            {
+                                States.Add(newItem);
+                                //Ask how if the check is needed and if this should change to State addition
+                            }
+                        }//foreach lookahead
+                    }// foreach Rule of nonterminals
+                }//if
+            }// not processed
+        }// while
+    }//Stateclosure
+}// Grammar class
