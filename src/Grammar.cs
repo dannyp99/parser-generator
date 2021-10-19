@@ -2,6 +2,20 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
+
+public class RGrule 
+{ 
+    public string Lhs;
+    public Func<List<object>,object> Ruleaction;
+
+    public RGrule() {}
+    public RGrule(string lh)
+    {
+        Lhs=lh;
+        Ruleaction = (p) => {return new object();};
+    }
+}
+
 public class GrammarSym {
     public string Sym { get; set; }
     public string FsharpType { get; set; }
@@ -31,7 +45,17 @@ public class GrammarRule {
     public string Action { get; set; }
     public int Precedence { get; set; }
     public string Operation { get; set; }
-    
+
+    public GrammarRule(){ } 
+    // same as laing's new_skeleton
+    public GrammarRule(string lh){
+        Lhs = new GrammarSym(lh,false);
+        Rhs = new List<GrammarSym>();
+        Action = "";
+        Precedence = 0;
+
+    }
+
     public void PrintRule()
     {
         Console.Write($"Production: {Lhs.Sym} --> ");
@@ -50,7 +74,7 @@ public class GrammarRule {
 
 public class Grammar
 {
-    public bool TRACE = false;
+    public bool TRACE = true;
     public Dictionary<string, GrammarSym> Symbols { get; set; }
     public List<GrammarRule> Rules { get; set; }
     public string TopSym { get; set; }
@@ -120,7 +144,7 @@ public class Grammar
             else if (line.Length > 1 && line[0] != '#')
             {
                 int linelen = line.Length;
-                string[] toks = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                List<string> toks = line.Split(' ', StringSplitOptions.RemoveEmptyEntries).ToList();
                 if (TRACE) {
                     foreach (var tok in toks) {
                         Console.WriteLine("'" + tok + "'");
@@ -132,7 +156,7 @@ public class Grammar
                         atEOF = true;
                         break;
                     case "terminal":          
-                        for(int i = 1; i < toks.Length; i++)
+                        for(int i = 1; i < toks.Count; i++)
                         {
                         newTerm = new GrammarSym(toks[i],true);
                         Symbols.Add(toks[i], newTerm);
@@ -166,17 +190,21 @@ public class Grammar
                     default:
                         if (NonTerminal(toks[0]) && toks[1] == "-->") {
                             if (TRACE) {Console.WriteLine("Rule");}
+                            Console.WriteLine("Making lhsSym...");
                             GrammarSym lhsSym = Symbols[toks[0]];
                             List<GrammarSym> rhsSyms = new List<GrammarSym>();
-
-                            foreach (string tok in toks.Skip(2)) {
-                                if (TRACE) {Console.WriteLine("  " + tok);}
-                                if (tok == "{") {
+                            string semAction = "}";
+                            for(int i = 2; i< toks.Count; i++) {
+                                if (TRACE) {Console.WriteLine("  " + toks[i]);}
+                                if (toks[i] == "{") {
+                                    semAction = string.Join(" ",toks.Skip(i).ToList());
+                                    Console.WriteLine("Breaking...");
                                     break;
                                 }
 
-                                string[] tokLab = tok.Split(':');
+                                string[] tokLab = toks[i].Split(':');
                                 // TODO handle exception for unrecognized symbol
+                                Console.WriteLine("Making newSym Grammar Symbol...");
                                 GrammarSym newSym = Symbols[tokLab[0]];
                                 if (tokLab.Length > 1) {
                                     newSym.Label = tokLab[1];
@@ -187,7 +215,8 @@ public class Grammar
                             GrammarRule rule = new GrammarRule {
                                 Lhs = lhsSym,
                                 Rhs = rhsSyms,
-                                Operation = default(string)
+                                Operation = default(string),
+                                Action = semAction
                             };
                             Rules.Add(rule);
                         } else {

@@ -1,0 +1,17 @@
+# Grammar for JBasic for MVOCC, adopted from Cup version
+
+nonterminal E i32
+nonterminal T i32
+nonterminal F i32
+terminal + * ( )
+typedterminal num i32
+topsym E
+
+E --> E:e + T:t { return e+t; }
+E --> T:t { return t; }
+T --> T:t * F:f { return t*f; }
+T --> F:f { return f; }
+F --> ( E:e )  { return e; }
+F --> num:n { return n; }
+
+EOF
