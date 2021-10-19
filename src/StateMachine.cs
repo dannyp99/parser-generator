@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 
 public class StateMachine
 {
@@ -102,7 +103,7 @@ public class StateMachine
     }
     public void AddState(SortedSet<Gitem> state, short psi, string nextSym)
     {
-
+        bool TRACE = false;
         var indexsave = States.Count; // getting the index of the state
         int toAdd = indexsave;
         for (int i = 0; i < States.Count; i++)
@@ -113,8 +114,10 @@ public class StateMachine
         }
         if (toAdd == indexsave)
         {
-            Console.WriteLine("Adding state:" );
-            PrintSet(state);
+            if(TRACE){
+                Console.WriteLine("Adding state:" );
+                PrintSet(state);
+            }
             States.Add(state);
             FSM.Add(new Dictionary<string, IStateAction>());
         }
@@ -161,6 +164,7 @@ public class StateMachine
          Console.WriteLine("    " + item);   
         }
     }
+
     public void prettyPrintFSM(SortedSet<Gitem> states, Grammar grammar)    
     {   
         Gitem state = new Gitem();
@@ -183,6 +187,78 @@ public class StateMachine
         }
     }
 
+    public void writefsm(string filename)
+    {
+        bool TRACE = true;
+        
+        using (StreamWriter sw = new StreamWriter(filename)) {
+            sw.Write("### Usings ###\n");
+            // Systems.Collections
+            // sw.WriteLine(String.Format("{0}\n", Grammar.Extras));
+            string TAT = "object"; // can be replaced w/ object
+            sw.Write(String.Format("public Parser<{0}> make_parser()",TAT));
+            sw.Write("\n{\n");
+            sw.Write(String.Format("Parser<{0}> parser1 = new Parser<{0}>({1},{2});\n",TAT,"testFSM","testRules"));
+
+            sw.Write("GrammarRule rule = new GrammarRule(\"start\");\n");
+            for(int i = 0; i < Grammar.Rules.Count; i++) {
+                if(TRACE){
+                    Console.WriteLine(Grammar.Rules.Count);
+                }
+                sw.Write("rule = GrammarRule(\"{0}\");\n",Grammar.Rules[i].Lhs.Sym);
+                sw.Write("rule.Action = (pstack) => { "); //lambda stuff
+                int k = Grammar.Rules[i].Rhs.Count;
+                while(k>0) {
+                    GrammarSym gsym = Grammar.Rules[i].Rhs[k-1];
+                    if(gsym.Label.Length > 0) {
+                        sw.Write(" {0} {1} =",  TAT, gsym.Label);
+                    }
+                    sw.Write("pstack.Pop();");
+                    k--;
+                } // end Rhs while
+                if(TRACE){
+                    Console.WriteLine("Exit While");
+                    Grammar.Rules[i].PrintRule();
+                    Console.WriteLine("Action: [" + Grammar.Rules[i].Action + "]"); //never put in Action to the grammars??
+                }
+                string semaction = Grammar.Rules[i].Action ?? ""; 
+                
+                if(TRACE){
+                    Console.WriteLine("Begin SemanticAction ifs");
+                    Console.WriteLine(semaction);
+                }
+                if(semaction.Length>1) { 
+                    if(TRACE) {
+                        Console.WriteLine("semaction.Length > 1");
+                    }
+                    sw.Write(String.Format("{0};\n",semaction));
+                }
+                else {
+                    if(TRACE) {
+                        Console.WriteLine("???");
+                    }
+                    sw.Write("return default(object);\n");   
+                }
+                sw.Write("parser1.Rules.Add(rule);\n");
+            } // end for i in Rules.Count
+            
+            int linecs = 0;
+            // int cxmax = 512; // number of line before creating a new function??
+            for(int i = 0; i < FSM.Count; i++) {
+                var row = FSM[i];
+                foreach(var key in row.Keys) {
+                    if(key =="EOF") {
+                        sw.Write(String.Format("parser1.RSM[{0}].Add(\"{1}\",new {2}());\n",i,key,row[key]));
+                    }
+                    else { 
+                        sw.Write(String.Format("parser1.RSM[{0}].Add(\"{1}\",new {2}({3}));\n",i,key,row[key],row[key].Next));
+                    }
+                }
+            }
+            sw.Write("return parser1;\n}//make_parser\n");
+        } // Using StreamWriter  
+    }//writefsm
+        bool TRACE = false;
         public static void Main(string[] argv) {
         Grammar g = new Grammar();
         if (argv.Length > 0) {
@@ -195,17 +271,18 @@ public class StateMachine
         foreach (var rule in g.Rules) {
             rule.PrintRule();
         }
+        
         g.ComputeFirst();
         g.PrintFirst();
         g.PrintNullable();
-
-        
+        Console.WriteLine("GrammarSym:" + g.Rules[0].Rhs[0]);
 
         var itemSet = new SortedSet<Gitem>(new GitemComparer());
         g.StateClosure(itemSet);
         StateMachine sm = new StateMachine(g);
         sm.generatefsm();
         sm.prettyPrintFSM(sm.States[0], g);
-        Console.WriteLine(sm.States.Count);
+        string testpath = "./writefsmTests/test.cs";
+        sm.writefsm(testpath);
     }
 }
