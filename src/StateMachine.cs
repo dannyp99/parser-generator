@@ -216,9 +216,8 @@ public class StateMachine
             sw.Write("using System.Collections.Generic;\n");
             sw.Write("using System.Linq;\n");
             sw.Write("class Generator{\n");
-            // Systems.Collections
-            // sw.WriteLine(String.Format("{0}\n", Grammar.Extras));
             string TAT = "object"; // can be replaced w/ object
+
             sw.Write(String.Format("public Parser<{0}> make_parser()",TAT));
             sw.Write("\n{\n");
             sw.Write(String.Format("Parser<{0}> parser1 = new Parser<{0}>({1},{2});\n",TAT,Grammar.Rules.Count,States.Count));
@@ -279,7 +278,7 @@ public class StateMachine
                 }
             }
             sw.Write("return parser1;\n}//make_parser\n");
-            sw.Write("} // Parser Class");
+            sw.Write("} // Generator Class");
         } // Using StreamWriter  
     }//writefsm
         bool TRACE = false;
