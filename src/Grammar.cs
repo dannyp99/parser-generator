@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -6,13 +7,13 @@ using System.Linq;
 public class RGrule 
 { 
     public string Lhs;
-    public Func<List<object>,object> Ruleaction;
+    public Func<Stack<object>,object> RuleAction;
 
     public RGrule() {}
     public RGrule(string lh)
     {
         Lhs=lh;
-        Ruleaction = (p) => {return new object();};
+        RuleAction = (p) => {return new object();};
     }
 }
 
@@ -197,7 +198,7 @@ public class Grammar
                             for(int i = 2; i< toks.Count; i++) {
                                 if (TRACE) {Console.WriteLine("  " + toks[i]);}
                                 if (toks[i] == "{") {
-                                    semAction = string.Join(" ",toks.Skip(i).ToList());
+                                    semAction = string.Join(" ",toks.Skip(i+1).ToList());
                                     Console.WriteLine("Breaking...");
                                     break;
                                 }

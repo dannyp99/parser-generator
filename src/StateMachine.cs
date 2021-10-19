@@ -2,6 +2,25 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 
+
+public class Parser<Object>
+{
+    public List<Dictionary<string,IStateAction>> RSM;
+    public List<RGrule> Rules;
+
+    public Parser(int rlen, int slen) 
+    {
+        RSM = new List<Dictionary<string,IStateAction>>(slen);
+        Rules = new List<RGrule>(rlen);
+
+        for(int i = 0; i < slen; i++) {
+            RSM.Add(new Dictionary<string,IStateAction>());
+        }
+    }
+
+    //TODO parse
+}
+
 public class StateMachine
 {
     public Grammar Grammar { get; set; }
@@ -192,21 +211,25 @@ public class StateMachine
         bool TRACE = true;
         
         using (StreamWriter sw = new StreamWriter(filename)) {
-            sw.Write("### Usings ###\n");
+            sw.Write("using System;\n");
+            sw.Write("using System.Collections;\n");
+            sw.Write("using System.Collections.Generic;\n");
+            sw.Write("using System.Linq;\n");
+            sw.Write("class Generator{\n");
             // Systems.Collections
             // sw.WriteLine(String.Format("{0}\n", Grammar.Extras));
             string TAT = "object"; // can be replaced w/ object
             sw.Write(String.Format("public Parser<{0}> make_parser()",TAT));
             sw.Write("\n{\n");
-            sw.Write(String.Format("Parser<{0}> parser1 = new Parser<{0}>({1},{2});\n",TAT,"testFSM","testRules"));
+            sw.Write(String.Format("Parser<{0}> parser1 = new Parser<{0}>({1},{2});\n",TAT,Grammar.Rules.Count,States.Count));
 
-            sw.Write("GrammarRule rule = new GrammarRule(\"start\");\n");
+            sw.Write("RGrule rule = new RGrule(\"start\");\n");
             for(int i = 0; i < Grammar.Rules.Count; i++) {
                 if(TRACE){
                     Console.WriteLine(Grammar.Rules.Count);
                 }
-                sw.Write("rule = GrammarRule(\"{0}\");\n",Grammar.Rules[i].Lhs.Sym);
-                sw.Write("rule.Action = (pstack) => { "); //lambda stuff
+                sw.Write("rule = new RGrule(\"{0}\");\n",Grammar.Rules[i].Lhs.Sym);
+                sw.Write("rule.RuleAction = (pstack) => { "); //lambda stuff
                 int k = Grammar.Rules[i].Rhs.Count;
                 while(k>0) {
                     GrammarSym gsym = Grammar.Rules[i].Rhs[k-1];
@@ -237,7 +260,7 @@ public class StateMachine
                     if(TRACE) {
                         Console.WriteLine("???");
                     }
-                    sw.Write("return default(object);\n");   
+                    sw.Write("return default(object);};\n");   
                 }
                 sw.Write("parser1.Rules.Add(rule);\n");
             } // end for i in Rules.Count
@@ -247,7 +270,7 @@ public class StateMachine
             for(int i = 0; i < FSM.Count; i++) {
                 var row = FSM[i];
                 foreach(var key in row.Keys) {
-                    if(key =="EOF") {
+                    if(row[key] is Accept) {
                         sw.Write(String.Format("parser1.RSM[{0}].Add(\"{1}\",new {2}());\n",i,key,row[key]));
                     }
                     else { 
@@ -256,6 +279,7 @@ public class StateMachine
                 }
             }
             sw.Write("return parser1;\n}//make_parser\n");
+            sw.Write("} // Parser Class");
         } // Using StreamWriter  
     }//writefsm
         bool TRACE = false;
