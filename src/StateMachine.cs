@@ -233,7 +233,7 @@ public class StateMachine
                 while(k>0) {
                     GrammarSym gsym = Grammar.Rules[i].Rhs[k-1];
                     if(gsym.Label.Length > 0) {
-                        sw.Write(" {0} {1} =",  TAT, gsym.Label);
+                        sw.Write(" {0} {1} = ({0})",  gsym.FsharpType, gsym.Label);
                     }
                     sw.Write("pstack.Pop();");
                     k--;

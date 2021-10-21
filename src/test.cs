@@ -8,25 +8,25 @@ public Parser<object> make_parser()
 Parser<object> parser1 = new Parser<object>(7,23);
 RGrule rule = new RGrule("start");
 rule = new RGrule("E");
-rule.RuleAction = (pstack) => {  object t =pstack.Pop();pstack.Pop(); object e =pstack.Pop();return e+t; };
+rule.RuleAction = (pstack) => {  int t = (int)pstack.Pop();pstack.Pop(); int e = (int)pstack.Pop();return e+t; };
 parser1.Rules.Add(rule);
 rule = new RGrule("E");
-rule.RuleAction = (pstack) => {  object t =pstack.Pop();return t; };
+rule.RuleAction = (pstack) => {  int t = (int)pstack.Pop();return t; };
 parser1.Rules.Add(rule);
 rule = new RGrule("T");
-rule.RuleAction = (pstack) => {  object f =pstack.Pop();pstack.Pop(); object t =pstack.Pop();return t*f; };
+rule.RuleAction = (pstack) => {  int f = (int)pstack.Pop();pstack.Pop(); int t = (int)pstack.Pop();return t*f; };
 parser1.Rules.Add(rule);
 rule = new RGrule("T");
-rule.RuleAction = (pstack) => {  object f =pstack.Pop();return f; };
+rule.RuleAction = (pstack) => {  int f = (int)pstack.Pop();return f; };
 parser1.Rules.Add(rule);
 rule = new RGrule("F");
-rule.RuleAction = (pstack) => { pstack.Pop(); object e =pstack.Pop();pstack.Pop();return e; };
+rule.RuleAction = (pstack) => { pstack.Pop(); int e = (int)pstack.Pop();pstack.Pop();return e; };
 parser1.Rules.Add(rule);
 rule = new RGrule("F");
-rule.RuleAction = (pstack) => {  object n =pstack.Pop();return n; };
+rule.RuleAction = (pstack) => {  int n = (int)pstack.Pop();return n; };
 parser1.Rules.Add(rule);
 rule = new RGrule("START");
-rule.RuleAction = (pstack) => { pstack.Pop(); object e =pstack.Pop();return default(object);};
+rule.RuleAction = (pstack) => { pstack.Pop(); int e = (int)pstack.Pop();return default(object);};
 parser1.Rules.Add(rule);
 parser1.RSM[0].Add("E",new GotoState(1));
 parser1.RSM[0].Add("T",new GotoState(2));
@@ -102,4 +102,4 @@ parser1.RSM[22].Add("*",new Reduce(4));
 parser1.RSM[22].Add("+",new Reduce(4));
 return parser1;
 }//make_parser
-} // Parser Class
+} // Generator Class

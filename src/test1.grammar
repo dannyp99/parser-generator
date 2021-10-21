@@ -1,10 +1,10 @@
 # Grammar for JBasic for MVOCC, adopted from Cup version
 
-nonterminal E i32
-nonterminal T i32
-nonterminal F i32
+nonterminal E int
+nonterminal T int
+nonterminal F int
 terminal + * ( )
-typedterminal num i32
+typedterminal num int
 topsym E
 
 E --> E:e + T:t { return e+t; }
