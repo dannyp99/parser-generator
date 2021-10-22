@@ -1,0 +1,8 @@
+# testing lexer
+let x = 2*1.3;
+let x2 = 0;
+while !(x>x2 || x==10)
+{
+ print("x is " + x);
+ x = x-1;
+}

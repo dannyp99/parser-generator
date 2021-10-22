@@ -1,11 +1,14 @@
 BUILD=./build
+LEXER=./lexer
 
-all: lib
+all: lib lexer
 	mcs -r:$(BUILD)/Gitem.dll,$(BUILD)/Grammar.dll -out:Parser.exe StateAction.cs StateMachine.cs
 
 lib: $(BUILD)
 	mcs -target:library -out:$(BUILD)/Gitem.dll Gitem.cs
 	mcs -r:$(BUILD)/Gitem.dll -target:library -out:$(BUILD)/Grammar.dll Grammar.cs
+lex: $(LEXER)
+	mcs $(LEXER)/*.cs -target:library -out:simpleLexer.dll
 
 $(BUILD):
 	mkdir -p $@
