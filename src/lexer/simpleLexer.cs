@@ -1,6 +1,6 @@
 /*
     This simple lexical analyzer distinguishes between keywords, symbols,
-    integer, floating-point and string literals.
+    alphanumeric words, integer, floating-point and string literals.
 
     Compile with absLexer.cs
 
@@ -13,7 +13,7 @@
     One takes a single string and splits the string using the regular
     expression operators_re.
 
-    The other constructor takes string representing a file name and a
+    The other constructor takes a string representing a file name and a
     'end-of-file' symbol that is inserted into the string at the end of each
     line (unless it's set to null, which is the usual case).  It
     reads all lines from the file into an array of lines.  The next()
@@ -92,6 +92,7 @@ public class simpleLexer : absLexer
      while (linenumber<lines.Length && (s==null || s.Length<1 || s[0]==commentchar))  {
          linenumber++;
          s = lines[linenumber-1];
+         if (s!=null) s = s.Trim();
        }
      if (s!=null && s.Length>0 && s[0]!=commentchar) {
         if (endofline!=null && endofline.Length>1)
