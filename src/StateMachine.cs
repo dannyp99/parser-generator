@@ -2,6 +2,18 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 
+//used in write_fsm becasue we need state indices and their semantic action combined.
+public class StackElement<Object>
+{
+    public int Si {get; set;}
+    public object Value {get; set;}
+
+    public StackElement(int si, object val)
+    {
+        Si = si;
+        Value = val;
+    }
+}
 
 public class Parser<Object>
 {
@@ -19,6 +31,59 @@ public class Parser<Object>
     }
 
     //TODO parse
+    // line 1064 of Rust
+    public object Parse(simpleLexer tokenizer)
+    {
+        object result = default(object);
+        Stack<StackElement<object>> stack = new Stack<StackElement<object>>();
+
+        stack.Push(new StackElement<object>(0,default(object)));
+        //Error handling line
+        IStateAction unexpected = new Error("Unexpected end of input");
+        // action is error until it isnt
+        IStateAction action = unexpected;
+        bool stopparsing = false;
+
+        if(tokenizer.next() == null) { stopparsing = true; }
+        lexToken lookahead = tokenizer.next();
+        while(!stopparsing) {
+            int currentState = stack.Peek().Si;
+            IStateAction actionopt = RSM[currentState][lookahead.token_type];
+            action = actionopt;
+            if(action is Shift) { // being "match"
+                stack.Push(new StackElement<object>(action.Next,lookahead.token_value));
+                if(tokenizer.next() != null) { stopparsing=true; }
+                else { lookahead = tokenizer.next(); }
+            }
+            else if(action is Reduce) {
+                RGrule rulei = Rules[action.Next];
+                object val = rulei.RuleAction(stack);
+                int newtop = stack.Peek().Si; 
+                IStateAction goton = RSM[newtop][rulei.Lhs];
+
+                if(goton is GotoState) {
+                    stack.Push(new StackElement<object>(goton.Next, val));
+                }
+                else { stopparsing = true;}
+            }
+            else if(action is Accept) {
+                result  = stack.Pop().Value;
+                stopparsing = true;
+            }
+            else if(action is Error) {
+                stopparsing = true;
+            }
+            else if(action is GotoState) {
+                stopparsing = true;
+            } //end "match"            
+        } // while loop
+
+        if(action is Error) {
+            Error err = (Error)action;
+            throw new ArgumentException(String.Format("Parsing failed on line {0}, next symbol {1}: {2}\n", tokenizer.linenum(),lookahead.token_type,err.Message));
+        }
+        return result;
+    } //parse
 }
 
 public class StateMachine
@@ -233,9 +298,11 @@ public class StateMachine
                 while(k>0) {
                     GrammarSym gsym = Grammar.Rules[i].Rhs[k-1];
                     if(gsym.Label.Length > 0) {
-                        sw.Write(" {0} {1} = ({0})",  gsym.FsharpType, gsym.Label);
+                        sw.Write(" {0} {1} = ({0})pstack.Pop().Value;",  gsym.FsharpType, gsym.Label);
                     }
-                    sw.Write("pstack.Pop();");
+                    else {
+                        sw.Write("pstack.Pop();");
+                    }
                     k--;
                 } // end Rhs while
                 if(TRACE){
@@ -307,5 +374,11 @@ public class StateMachine
         sm.prettyPrintFSM(sm.States[0], g);
         string testpath = "./writefsmTests/test.cs";
         sm.writefsm(testpath);
+
+        string srcfile = "./lexer/simpleTest.txt";
+        simpleLexer SLexer = new simpleLexer(srcfile,"\n");
+        Parser<object> Par = Generator.make_parser();
+        string t = (string)Par.Parse(SLexer);
+        Console.WriteLine(t);
     }
 }

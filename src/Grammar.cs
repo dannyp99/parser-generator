@@ -7,7 +7,7 @@ using System.Linq;
 public class RGrule 
 { 
     public string Lhs;
-    public Func<Stack<object>,object> RuleAction;
+    public Func<Stack<StackElement<object>>,object> RuleAction;
 
     public RGrule() {}
     public RGrule(string lh)
@@ -33,6 +33,19 @@ public class GrammarSym {
         FsharpType = "String";
         Precedence = 20;
     }
+
+    /*
+    public GrammarSym(lexToken t) {
+        switch (t.token_type) {
+            case "Keyword":
+
+            case "Alphanumeric":
+            case "Symbol":
+            case "Float":
+            case "Integer":
+            case "StringLiteral":
+        }
+    } */
 
     public override string ToString()
     {
