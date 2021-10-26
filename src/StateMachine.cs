@@ -61,8 +61,8 @@ public class Parser<Object>
             if(action is Shift) { // being "match"
                 Console.WriteLine("Shifting");
                 stack.Push(new StackElement<object>(action.Next,lookahead.token_type));
+                lookahead = abstractLex.translate_token(tokenizer.next());
                 if(lookahead == null) { stopparsing=true; }
-                else { lookahead = abstractLex.translate_token(tokenizer.next()); }
             }
             else if(action is Reduce) {
                 Console.WriteLine("Reduce");
