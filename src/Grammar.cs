@@ -88,7 +88,7 @@ public class GrammarRule {
 
 public class Grammar
 {
-    public bool TRACE = true;
+    public bool TRACE = false;
     public Dictionary<string, GrammarSym> Symbols { get; set; }
     public List<GrammarRule> Rules { get; set; }
     public string TopSym { get; set; }
@@ -203,8 +203,10 @@ public class Grammar
                         break;
                     default:
                         if (NonTerminal(toks[0]) && toks[1] == "-->") {
-                            if (TRACE) {Console.WriteLine("Rule");}
-                            Console.WriteLine("Making lhsSym...");
+                            if (TRACE) {
+                                Console.WriteLine("Rule");
+                                Console.WriteLine("Making lhsSym...");
+                            }
                             GrammarSym lhsSym = Symbols[toks[0]];
                             List<GrammarSym> rhsSyms = new List<GrammarSym>();
                             string semAction = "}";
@@ -212,7 +214,6 @@ public class Grammar
                                 if (TRACE) {Console.WriteLine("  " + toks[i]);}
                                 if (toks[i] == "{") {
                                     semAction = string.Join(" ",toks.Skip(i+1).ToList());
-                                    Console.WriteLine("Breaking...");
                                     break;
                                 }
 

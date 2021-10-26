@@ -199,7 +199,6 @@ public class StateMachine
         if (toAdd == indexsave)
         {
             if(TRACE){
-                Console.WriteLine("Adding state:" );
                 PrintSet(state);
             }
             States.Add(state);
@@ -269,11 +268,12 @@ public class StateMachine
             if (i == item.Pi) { Console.Write(". "); }
             Console.WriteLine($", {item.La}");
         }
+        Console.WriteLine(states.Count);
     }
 
     public void writefsm(string filename)
     {
-        bool TRACE = true;
+        bool TRACE = false;
         
         using (StreamWriter sw = new StreamWriter(filename)) {
             sw.Write("using System;\n");
@@ -283,7 +283,7 @@ public class StateMachine
             sw.Write("class Generator{\n");
             string TAT = "object"; // can be replaced w/ object
 
-            sw.Write(String.Format("public Parser<{0}> make_parser()",TAT));
+            sw.Write(String.Format("public static Parser<{0}> make_parser()",TAT));
             sw.Write("\n{\n");
             sw.Write(String.Format("Parser<{0}> parser1 = new Parser<{0}>({1},{2});\n",TAT,Grammar.Rules.Count,States.Count));
 
@@ -331,7 +331,7 @@ public class StateMachine
                 sw.Write("parser1.Rules.Add(rule);\n");
             } // end for i in Rules.Count
             
-            int linecs = 0;
+            //int linecs = 0;
             // int cxmax = 512; // number of line before creating a new function??
             for(int i = 0; i < FSM.Count; i++) {
                 var row = FSM[i];
@@ -348,7 +348,7 @@ public class StateMachine
             sw.Write("} // Generator Class");
         } // Using StreamWriter  
     }//writefsm
-        bool TRACE = false;
+        //bool TRACE = false;
         public static void Main(string[] argv) {
         Grammar g = new Grammar();
         if (argv.Length > 0) {

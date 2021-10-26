@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 class Generator{
-public Parser<object> make_parser()
+public static Parser<object> make_parser()
 {
 Parser<object> parser1 = new Parser<object>(7,23);
 RGrule rule = new RGrule("start");
