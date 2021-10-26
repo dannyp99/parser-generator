@@ -2,6 +2,7 @@ public interface absLexer
 {
    lexToken next(); // returns null at eof
    int linenum();
+   lexToken translate_token(lexToken t);
 }
 
 public class lexToken

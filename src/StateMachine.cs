@@ -13,6 +13,11 @@ public class StackElement<Object>
         Si = si;
         Value = val;
     }
+
+    public override string ToString()
+    {
+        return String.Format("Index: {0} with value {1}", Si, (string) Value);
+    }
 }
 
 public class Parser<Object>
@@ -34,6 +39,7 @@ public class Parser<Object>
     // line 1064 of Rust
     public object Parse(simpleLexer tokenizer)
     {
+        absLexer abstractLex = new concreteLexer();
         object result = default(object);
         Stack<StackElement<object>> stack = new Stack<StackElement<object>>();
 
@@ -43,19 +49,23 @@ public class Parser<Object>
         // action is error until it isnt
         IStateAction action = unexpected;
         bool stopparsing = false;
-
-        if(tokenizer.next() == null) { stopparsing = true; }
-        lexToken lookahead = tokenizer.next();
+        lexToken lookahead = abstractLex.translate_token(tokenizer.next());
+        if(lookahead == null) { stopparsing = true; }
+        abstractLex.translate_token(lookahead);
+        Console.WriteLine("lookahead " + lookahead.token_type);
         while(!stopparsing) {
-            int currentState = stack.Peek().Si;
+            Console.WriteLine(stack.Peek());
+            int currentState = stack.Peek().Si;     
             IStateAction actionopt = RSM[currentState][lookahead.token_type];
             action = actionopt;
             if(action is Shift) { // being "match"
-                stack.Push(new StackElement<object>(action.Next,lookahead.token_value));
-                if(tokenizer.next() != null) { stopparsing=true; }
-                else { lookahead = tokenizer.next(); }
+                Console.WriteLine("Shifting");
+                stack.Push(new StackElement<object>(action.Next,lookahead.token_type));
+                if(lookahead == null) { stopparsing=true; }
+                else { lookahead = abstractLex.translate_token(tokenizer.next()); }
             }
             else if(action is Reduce) {
+                Console.WriteLine("Reduce");
                 RGrule rulei = Rules[action.Next];
                 object val = rulei.RuleAction(stack);
                 int newtop = stack.Peek().Si; 
@@ -67,13 +77,16 @@ public class Parser<Object>
                 else { stopparsing = true;}
             }
             else if(action is Accept) {
+                Console.WriteLine("Accept");
                 result  = stack.Pop().Value;
                 stopparsing = true;
             }
             else if(action is Error) {
+                Console.WriteLine("Error");
                 stopparsing = true;
             }
             else if(action is GotoState) {
+                Console.WriteLine("GotoState");
                 stopparsing = true;
             } //end "match"            
         } // while loop
@@ -298,10 +311,10 @@ public class StateMachine
                 while(k>0) {
                     GrammarSym gsym = Grammar.Rules[i].Rhs[k-1];
                     if(gsym.Label.Length > 0) {
-                        sw.Write(" {0} {1} = ({0})pstack.Pop().Value;",  gsym.FsharpType, gsym.Label);
+                        sw.Write(" {0} {1} = ({0})pstack.Pop().Value; ",  gsym.FsharpType, gsym.Label);
                     }
                     else {
-                        sw.Write("pstack.Pop();");
+                        sw.Write("pstack.Pop(); ");
                     }
                     k--;
                 } // end Rhs while
@@ -378,7 +391,7 @@ public class StateMachine
         string srcfile = "./lexer/simpleTest.txt";
         simpleLexer SLexer = new simpleLexer(srcfile,"\n");
         Parser<object> Par = Generator.make_parser();
-        string t = (string)Par.Parse(SLexer);
+        int t = (int)Par.Parse(SLexer);
         Console.WriteLine(t);
     }
 }

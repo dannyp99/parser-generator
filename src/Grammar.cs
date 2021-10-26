@@ -219,7 +219,7 @@ public class Grammar
 
                                 string[] tokLab = toks[i].Split(':');
                                 // TODO handle exception for unrecognized symbol
-                                Console.WriteLine("Making newSym Grammar Symbol...");
+                                //Console.WriteLine("Making newSym Grammar Symbol...");
                                 GrammarSym newSym = Symbols[tokLab[0]];
                                 if (tokLab.Length > 1) {
                                     newSym.Label = tokLab[1];

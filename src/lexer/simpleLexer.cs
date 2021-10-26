@@ -67,6 +67,7 @@ public class simpleLexer : absLexer
   protected string[] ssplit; 
   protected int ti=0; // token position in ssplit
   protected int linenumber=0;  // subtract 1 to use as index
+  public simpleLexer() {}
   public simpleLexer(string s) // make lexer from string
   {
      foreach (string kw in keywords) addKeyword(kw);
@@ -143,7 +144,7 @@ public class simpleLexer : absLexer
   }//next
 
   public int linenum() {return linenumber;}
-
+  public virtual lexToken translate_token(lexToken t) { return t; }
 
 
   /////// main for testing
@@ -160,7 +161,7 @@ public class simpleLexer : absLexer
      while (token!=null);
 
      Console.WriteLine("\ntesting file input from lexertest.txt..");
-     scanner = new simpleLexer("lexertest.txt",null);
+     scanner = new simpleLexer("simpleTest.txt",null);
      do {
         token = scanner.next();
         if (token!=null) Console.WriteLine("Token from file: "+token);

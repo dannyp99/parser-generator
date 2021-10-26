@@ -3,7 +3,7 @@
 nonterminal E int
 nonterminal T int
 nonterminal F int
-terminal + * ( )
+terminal + - * ( )
 typedterminal num int
 topsym E
 
