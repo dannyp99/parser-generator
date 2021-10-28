@@ -49,29 +49,39 @@ public class Parser<Object>
         // action is error until it isnt
         IStateAction action = unexpected;
         bool stopparsing = false;
-        lexToken lookahead = abstractLex.translate_token(tokenizer.next());
+        var nextoken = tokenizer.next();
+        Console.WriteLine("*** First token: "+nextoken);        
+        lexToken lookahead = abstractLex.translate_token(nextoken);
+        Console.WriteLine("*** First translated token: "+lookahead);                
         if(lookahead == null) { stopparsing = true; }
         abstractLex.translate_token(lookahead);
         Console.WriteLine("lookahead " + lookahead.token_type);
         while(!stopparsing) {
-            Console.WriteLine(stack.Peek());
-            int currentState = stack.Peek().Si;     
+            //Console.WriteLine(stack.Peek());
+            int currentState = stack.Peek().Si;
+Console.Write("State "+currentState+", lookahead ("+lookahead.token_type+"): ");            
             IStateAction actionopt = RSM[currentState][lookahead.token_type];
             action = actionopt;
             if(action is Shift) { // being "match"
-                Console.WriteLine("Shifting");
-                stack.Push(new StackElement<object>(action.Next,lookahead.token_type));
-                lookahead = abstractLex.translate_token(tokenizer.next());
-                if(lookahead == null) { stopparsing=true; }
+                Console.WriteLine("Shifting to state "+action.Next);
+                stack.Push(new StackElement<object>(action.Next,lookahead.token_value));
+                if (lookahead.token_type!="EOF") {
+                  nextoken = tokenizer.next();
+                  Console.WriteLine("***next token: "+nextoken);
+                  if (nextoken!=null)
+                    lookahead = abstractLex.translate_token(nextoken);
+                  else  stopparsing=true;
+                }// if not at EOF
             }
             else if(action is Reduce) {
-                Console.WriteLine("Reduce");
+                Console.Write("Reduce by rule "+action.Next+",  ");
                 RGrule rulei = Rules[action.Next];
                 object val = rulei.RuleAction(stack);
                 int newtop = stack.Peek().Si; 
                 IStateAction goton = RSM[newtop][rulei.Lhs];
-
+                
                 if(goton is GotoState) {
+                Console.WriteLine("Goto state "+goton.Next);
                     stack.Push(new StackElement<object>(goton.Next, val));
                 }
                 else { stopparsing = true;}
@@ -79,6 +89,7 @@ public class Parser<Object>
             else if(action is Accept) {
                 Console.WriteLine("Accept");
                 result  = stack.Pop().Value;
+                result  = stack.Pop().Value;                
                 stopparsing = true;
             }
             else if(action is Error) {
@@ -172,9 +183,11 @@ public class StateMachine
                     if (item.Ri == Grammar.Rules.Count - 1 && item.La == "EOF")
                     {
                         FSM[si].Add(item.La, new Accept());
+                        Console.WriteLine("***FSM["+si+"]["+item.La+"]=Accept");
                     }
                     else {
                         FSM[si].Add(item.La, new Reduce(item.Ri));
+                        Console.WriteLine("***FSM["+si+"]["+item.La+"]=Reduce by "+item.Ri);                        
                     }
                 }// add IStateAction
             }//set reduce action
@@ -220,12 +233,14 @@ public class StateMachine
 
         GrammarSym gSymbol = Grammar.Symbols[nextSym];
         IStateAction newAction;
-        if (gSymbol.Terminal)
+        string actionstr = "Shift("+toAdd+")";
+        if (gSymbol.Terminal)  // && gSymbol.Sym!="EOF")
         {
             newAction = new Shift(toAdd);
         }
-        else {
+        else  {
             newAction = new GotoState(toAdd);
+            actionstr = "GotoState("+toAdd+")";            
         }
         if (FSM[psi].ContainsKey(nextSym)) {
             FSM[psi][nextSym] =  newAction;
@@ -233,6 +248,7 @@ public class StateMachine
         else {
             FSM[psi].Add(nextSym, newAction);
         }
+ Console.WriteLine("***FSM["+psi+"]["+nextSym+"]="+actionstr);
     } // End AddState
 
     public void generatefsm()
@@ -248,7 +264,7 @@ public class StateMachine
         while(closed < States.Count){ 
             makegotos(closed);
             closed +=1;
-            //Console.WriteLine(closed + " : " + States.Count);
+            Console.WriteLine(closed + " : " + States.Count);
         }
 
     }
@@ -361,6 +377,7 @@ public class StateMachine
             sw.Write("} // Generator Class");
         } // Using StreamWriter  
     }//writefsm
+    
         //bool TRACE = false;
         public static void Main(string[] argv) {
         Grammar g = new Grammar();
@@ -384,14 +401,15 @@ public class StateMachine
         g.StateClosure(itemSet);
         StateMachine sm = new StateMachine(g);
         sm.generatefsm();
-        sm.prettyPrintFSM(sm.States[0], g);
+        for(int i=0;i<sm.States.Count;i++)
+          {sm.prettyPrintFSM(sm.States[i], g);  Console.WriteLine("---State "+i+" above-------"); }
         string testpath = "./writefsmTests/test.cs";
         sm.writefsm(testpath);
 
         string srcfile = "./lexer/simpleTest.txt";
         simpleLexer SLexer = new simpleLexer(srcfile,"\n");
         Parser<object> Par = Generator.make_parser();
-        int t = (int)Par.Parse(SLexer);
-        Console.WriteLine(t);
-    }
+        var t = Par.Parse(SLexer);
+        Console.WriteLine("Result: "+t);
+    }//main
 }
