@@ -66,7 +66,7 @@ using System.Linq;
 
     public override string ToString()
     {
-      return Ri + " : " + Pi + " : " + La;
+      return "Gitem::  Rule Index: " + Ri + " :: Dot: " + Pi + " :: lookahead: " + La;
     }
 
     // may want to write prettyprint function

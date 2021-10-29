@@ -34,7 +34,7 @@ parser1.RSM[0].Add("F",new GotoState(3));
 parser1.RSM[0].Add("(",new Shift(4));
 parser1.RSM[0].Add("num",new Shift(5));
 parser1.RSM[1].Add("+",new Shift(6));
-parser1.RSM[1].Add("EOF",new Shift(7));
+parser1.RSM[1].Add("EOF",new GotoState(7));
 parser1.RSM[2].Add("+",new Reduce(1));
 parser1.RSM[2].Add("EOF",new Reduce(1));
 parser1.RSM[2].Add("*",new Shift(8));
