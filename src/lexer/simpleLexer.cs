@@ -81,7 +81,9 @@ public class simpleLexer : absLexer
      foreach (string kw in keywords) addKeyword(kw);
      foreach (string ms in multichar_syms) addMultichar(ms);  
      endofline = eof;
-     lines = System.IO.File.ReadAllLines(filename);
+     var tempLines = new List<string>(System.IO.File.ReadAllLines(filename));
+     tempLines.Add("EOF");
+     lines = tempLines.ToArray();
      linenumber = 0;
      newline();
      //ssplit = Regex.Split(line[0],operators_re);     

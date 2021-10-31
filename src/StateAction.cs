@@ -4,19 +4,16 @@ public interface IStateAction
   void DoIt(AbsParser absParser);
 }
 
-public abstract class AbsParser
-{
-
-}
+public abstract class AbsParser {
+  
+} 
 
 public class Reduce : IStateAction
 {
   public int Next {get; set;}
-  private int _rulei;
-  public int Rulei {get{return _rulei;} set { _rulei = value; Next = value; } } // rule index (for an arraylist called Rules) to reduce to
-  public Reduce(int ri)
+  public Reduce(int next)
   {
-    Rulei = ri;
+    Next = next;
   }
   public void DoIt(AbsParser absParser) {}
 }
@@ -24,12 +21,10 @@ public class Reduce : IStateAction
 public class Shift : IStateAction
 {
   public int Next {get; set;}
-  private int _nextstate;
-  int Nextstate { get{return _nextstate;} set { _nextstate=value; Next=value;} } // the state index (for an arraylist of states) to go to.
 
-  public Shift(int nextState)
+  public Shift(int next)
   {
-    Nextstate = nextState;
+    Next = next;
   }
   public void DoIt(AbsParser absParser) {}
 
@@ -42,11 +37,9 @@ public class Shift : IStateAction
 public class GotoState : IStateAction
 {
   public int Next { get; set;}
-  private int _nsi;
-  public int Nsi { get{return _nsi;} set {_nsi=value; Next=value;} } // next state index
-  public GotoState(int nsi)
+  public GotoState(int next)
   {
-    Nsi = nsi;
+    Next = next;
   }
   public void DoIt(AbsParser absParser) {}
 
@@ -57,7 +50,7 @@ public class GotoState : IStateAction
 }
 public class Accept : IStateAction
 {
-  public int Next{get;set;}
+  public int Next{ get; set; }
   public void DoIt(AbsParser absParser) {}
 
   public override string ToString() 

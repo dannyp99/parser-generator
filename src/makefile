@@ -1,18 +1,17 @@
-BUILD=./build
-LEXER=./lexer
+LEX=./lexer
 
-all: lib lexer
-	mcs -r:$(BUILD)/Gitem.dll,$(BUILD)/Grammar.dll -out:Parser.exe StateAction.cs StateMachine.cs
+run: Parser.exe
+	mono Parser.exe < test1.grammar
+	@rm Parser.exe # Quietly remove the executable
+.PHONY: run
 
-lib: $(BUILD)
-	mcs -target:library -out:$(BUILD)/Gitem.dll Gitem.cs
-	mcs -r:$(BUILD)/Gitem.dll -target:library -out:$(BUILD)/Grammar.dll Grammar.cs
-lex: $(LEXER)
-	mcs $(LEXER)/*.cs -target:library -out:simpleLexer.dll
+Parser.exe: simpleLexer.dll
+	mcs *.cs -r:simpleLexer.dll -out:Parser.exe
 
-$(BUILD):
-	mkdir -p $@
+simpleLexer.dll: $(LEX)/*.cs
+	mcs $(LEX)/*.cs -target:library -out:simpleLexer.dll
+
 
 clean:
-	rm -rf Grammar.exe $(BUILD)
+	rm -rf *.exe simpleLexer.dll
 .PHONY: clean
