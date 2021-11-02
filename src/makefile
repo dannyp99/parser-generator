@@ -11,7 +11,6 @@ Parser.exe: simpleLexer.dll
 simpleLexer.dll: $(LEX)/*.cs
 	mcs $(LEX)/*.cs -target:library -out:simpleLexer.dll
 
-
 clean:
 	rm -rf *.exe simpleLexer.dll
 .PHONY: clean
