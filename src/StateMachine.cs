@@ -125,11 +125,7 @@ public class Parser<Object>
                 if(TRACE) {
                     Console.WriteLine("GotoState");
                 }
-
-                StackElement<object> oldTop = stack.Pop();
-                stack.Push(new StackElement<object>(action.Next,oldTop.Value));
-
-                // stopparsing = true;
+                stopparsing = true;
             } //end "match"            
         } // while loop
 
@@ -210,11 +206,13 @@ public class StateMachine
                     }// pattern matching done
                 }
                 if (change)
-                {  
+                {   
+                    Console.WriteLine("Rule Index: " + item.Ri + " ; lookahead: " + item.La);
                     if (item.Ri == Grammar.Rules.Count - 1 )
                     {
+                        Console.WriteLine("ACCEPT this item");
                         FSM[si].Add(item.La, new Accept());
-                        // Console.WriteLine("***FSM["+si+"]["+item.La+"]=Accept");
+                        Console.WriteLine("***FSM["+si+"]["+item.La+"]=Accept");
                     }
                     else {
                         FSM[si].Add(item.La, new Reduce(item.Ri));
@@ -223,14 +221,20 @@ public class StateMachine
                 }// add IStateAction
             }//set reduce action
         }// for each item
+        Console.WriteLine("###FSM :: After Makegotos main loop. Before AddState loop");
+        // Pretty print FSM
         foreach (var key in keyList)
         {
             if(newStates.ContainsKey(key))
             {
+                Console.WriteLine("newStates[" + key + "]:: ");
+                PrintSet(newStates[key]);
                 Grammar.StateClosure(newStates[key]);//Fill state
                 AddState(newStates[key],si,key);
             }
         }
+        Console.WriteLine("###FSM :: After Addstate loop in Makegotos");
+        // pretty print fsm
     }//makegotos
 
     private bool stateeq(SortedSet<Gitem> s1, SortedSet<Gitem> s2)
@@ -318,6 +322,7 @@ public class StateMachine
 
         short closed = 0;
         while(closed < States.Count){ 
+            Console.WriteLine("***number of Closed States = " + closed + " number of States " + States.Count);
             makegotos(closed);
             closed +=1;
             // Console.WriteLine(closed + " : " + States.Count);
@@ -408,9 +413,6 @@ public class StateMachine
                     sw.Write(String.Format("{0};\n",semaction));
                 }
                 else {
-                    if(TRACE) {
-                        Console.WriteLine("???");
-                    }
                     sw.Write("return default(object);};\n");   
                 }
                 sw.Write("parser1.Rules.Add(rule);\n");
