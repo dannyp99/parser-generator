@@ -34,6 +34,15 @@ public class GrammarSym {
         Precedence = 20;
     }
 
+    public GrammarSym(GrammarSym gs) {
+        Sym = gs.Sym;
+        FsharpType = gs.FsharpType;
+        Terminal = gs.Terminal;
+        Label = gs.Label;
+        value = gs.value;
+        Precedence = gs.Precedence;
+    }
+
     /*
     public GrammarSym(lexToken t) {
         switch (t.token_type) {
@@ -49,7 +58,7 @@ public class GrammarSym {
 
     public override string ToString()
     {
-        return $"{Sym}: {Label} \n\t Precedence: {Precedence}";
+        return $"{Sym}: {Label} Precedence: {Precedence}";
     }
 }
 
@@ -145,6 +154,7 @@ public class Grammar
 
     public void ParseStdin()
     {
+        bool TRACE = false;
         var line = "";
         var atEOF = false;
         while (!atEOF)
@@ -168,13 +178,16 @@ public class Grammar
                 GrammarSym newTerm;
                 switch (toks[0]) {
                     case "EOF":
+                        if (TRACE) {
+                            Console.WriteLine("At EOF in Parstdin()");
+                        }
                         atEOF = true;
                         break;
                     case "terminal":          
                         for(int i = 1; i < toks.Count; i++)
                         {
-                        newTerm = new GrammarSym(toks[i],true);
-                        Symbols.Add(toks[i], newTerm);
+                            newTerm = new GrammarSym(toks[i],true);
+                            Symbols.Add(toks[i], newTerm);
                         }
                         break;
                     case "typedterminal":
@@ -185,6 +198,9 @@ public class Grammar
                    case "nonterminal":
                         newTerm = new GrammarSym(toks[1],false);
                         newTerm.FsharpType = toks[2];
+                        if(TRACE) {
+                            Console.WriteLine("****NonTermincal " + newTerm); // nonterminals do not have a label at this point
+                        }
                         Symbols.Add(toks[1],newTerm);
                         break;
                     case "topsym":
@@ -198,7 +214,10 @@ public class Grammar
                         if(toks[0] == "right") { preclevel = -1 * preclevel; }
 
                         GrammarSym gsym;
-                        if(Symbols.TryGetValue(toks[2], out gsym)) { gsym.Precedence = preclevel; }
+                        if(Symbols.TryGetValue(toks[1], out gsym)) { 
+                            gsym.Precedence = preclevel; 
+                        }
+                        
 
                         if (TRACE) {Console.WriteLine("left/right {0} {1}",toks[1],preclevel);}
                         break;
@@ -221,8 +240,13 @@ public class Grammar
                                 string[] tokLab = toks[i].Split(':');
                                 // TODO handle exception for unrecognized symbol
                                 //Console.WriteLine("Making newSym Grammar Symbol...");
-                                GrammarSym newSym = Symbols[tokLab[0]];
+                                //GrammarSym newSym = Symbols[tokLab[0]];
+                                GrammarSym newSym = new GrammarSym(Symbols[tokLab[0]]);
                                 if (tokLab.Length > 1) {
+                                    if(TRACE) {
+                                        Console.WriteLine("The new Symbol is " + newSym);
+                                        Console.Write("     Giving label " + tokLab[1] + "\n");
+                                    }
                                     newSym.Label = tokLab[1];
                                 }
                                 rhsSyms.Add(newSym);
@@ -240,6 +264,7 @@ public class Grammar
                         }
                         break;
                 }
+
             }
         }
 
