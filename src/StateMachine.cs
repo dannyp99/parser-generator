@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Diagnostics;
 
 //used in write_fsm becasue we need state indices and their semantic action combined.
 
@@ -100,6 +101,8 @@ public class StateMachine
             Console.WriteLine("###FSM :: After Makegotos main loop. Before AddState loop");
         }
         // Pretty print FSM
+        var watch = new Stopwatch();
+        watch.Start();
         foreach (var key in keyList)
         {
             if(newStates.ContainsKey(key))
@@ -112,6 +115,8 @@ public class StateMachine
                 AddState(newStates[key],si,key);
             }
         }
+        watch.Stop();
+        Console.WriteLine($"    StateClosure & AddState {watch.ElapsedMilliseconds}");
         if (TRACE) {
             Console.WriteLine("###FSM :: After Addstate loop in Makegotos");
         }
@@ -141,10 +146,10 @@ public class StateMachine
         }
         //Console.WriteLine(sameSizeIndecies.Count);
         int toAdd = indexsave;
-        Console.WriteLine("Number of items: " + state.Count);
+        //Console.WriteLine("Number of items: " + state.Count);
         foreach (int i in sameSizeIndecies)
         {
-            Console.WriteLine("index: " + i + " items: " + States[i].Count);
+            //Console.WriteLine("index: " + i + " items: " + States[i].Count);
             if (stateeq(state,States[i])) {
                 toAdd=i; break;
             }
@@ -154,6 +159,7 @@ public class StateMachine
             if(TRACE){
                 PrintSet(state);
             }
+            Console.WriteLine($"Adding State {States.Count} with {state.Count} elements");
             States.Add(state);
             SameSizeStates[state.Count].Add(States.Count - 1);
             FSM.Add(new Dictionary<string, IStateAction>());
@@ -211,9 +217,13 @@ public class StateMachine
         }
 
         States.Add(startState);
+        SameSizeStates[startState.Count] = new HashSet<int>(1024);
+        SameSizeStates[startState.Count].Add(States.Count - 1);
         FSM.Add(new Dictionary<string,IStateAction>());
 
         short closed = 0;
+        var watch = new Stopwatch();
+        watch.Start();
         while(closed < States.Count){ 
             if (TRACE) {
                 Console.WriteLine("***number of Closed States = " + closed + " number of States " + States.Count);
@@ -222,7 +232,8 @@ public class StateMachine
             closed +=1;
             // Console.WriteLine(closed + " : " + States.Count);
         }
-
+        watch.Stop();
+        Console.WriteLine($"MakeGOTOS: {watch.ElapsedMilliseconds}");
     }
 
     public void PrintSet(SortedSet<Gitem> set)
@@ -360,16 +371,16 @@ public class StateMachine
         //for(int i=0;i<sm.States.Count;i++)
           //{sm.prettyPrintFSM(sm.States[i], g);  Console.WriteLine("---State "+i+" above-------"); }
 
-        string testpath = "./test.cs";
-        Console.WriteLine("Gonna Write");
-        sm.writefsm(testpath);
-        Console.WriteLine("Done Writing");
+        // string testpath = "./test.cs";
+        // Console.WriteLine("Gonna Write");
+        // sm.writefsm(testpath);
+        // Console.WriteLine("Done Writing");
 
-        string srcfile = "./lexer/simpleTest.txt";
-        simpleLexer SLexer = new simpleLexer(srcfile, "EOF");
-        Parser<object> Par = Generator.make_parser();
-        var t = Par.Parse(SLexer);
-        Console.WriteLine("Result: "+t);
+        // string srcfile = "./lexer/simpleTest.txt";
+        // simpleLexer SLexer = new simpleLexer(srcfile, "EOF");
+        // Parser<object> Par = Generator.make_parser();
+        // var t = Par.Parse(SLexer);
+        // Console.WriteLine("Result: "+t);
         
     }//main
 }
