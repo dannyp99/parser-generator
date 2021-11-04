@@ -1,0 +1,12 @@
+nonterminal S i32
+nonterminal T i32
+terminal x y
+topsym S
+
+S --> T S
+T --> x
+T -->
+S -->
+S --> y
+EOF
+

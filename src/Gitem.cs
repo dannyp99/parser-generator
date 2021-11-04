@@ -17,13 +17,6 @@ using System.Linq;
 
   public class Gitem : IComparable
   {
-    /* This is Java code and have to change it around to IComparer C# 
-    public int compareTo(Gitem I)
-    {
-      return (ri*65536/2 + pi) - (I.ri*65536/2 + I.pi); //something
-    }
-    */ 
-
     public short Ri; // rule index
     public short Pi; // position of the dot
     public string La; // look ahead for LR(1)
@@ -40,14 +33,17 @@ using System.Linq;
       // ????  should Gitem also implement IComparable? 
       // this was for sorint we can easily pass in the comparer 
       // but for direct comparison we can use compareTo? Is that redundant?
-      return CompareTo(b) == 0; //compareTo((Gitem)b) == 0;
+      //return CompareTo(b) == 0; //compareTo((Gitem)b) == 0;
+      if (b==null) return false;
+      var other = (Gitem)b;
+      return Ri==other.Ri && Pi==other.Pi && La.Equals(other.La);
     }
 
     public int CompareTo(object I)
     {
       if (I == null) return 1;
 
-      Gitem other = I as Gitem;
+      Gitem other = (Gitem)I;
       if (other != null){
         var expr = (Ri*65536/2 + Pi) - (other.Ri*65536/2 + other.Pi);
         if ( expr == 0){
@@ -61,7 +57,8 @@ using System.Linq;
 
     public override int GetHashCode()
     {
-      return Ri.GetHashCode() ^ Pi.GetHashCode() ^ La.GetHashCode();
+      //return Ri.GetHashCode() ^ Pi.GetHashCode() ^ La.GetHashCode();
+      return (""+Ri+","+Pi+","+La).GetHashCode();
     }
 
     public override string ToString()

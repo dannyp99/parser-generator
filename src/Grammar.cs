@@ -365,7 +365,7 @@ public class Grammar
     }
 
     // generate lr(1) closure
-    public void StateClosure(SortedSet<Gitem> States) //change paramter to Grammar if moved to LR1State class
+    public void StateClosure(HashSet<Gitem> States) //change paramter to Grammar if moved to LR1State class
     {
         while (States.Any(x => !x.Processed)) //while any states is not processed.
         {

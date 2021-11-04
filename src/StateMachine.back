@@ -8,7 +8,7 @@ using System.Diagnostics;
 public class StateMachine
 {
     public Grammar Grammar { get; set; }
-    public List<HashSet<Gitem>> States { get; set; }
+    public List<SortedSet<Gitem>> States { get; set; }
     public Dictionary<int, HashSet<int>> SameSizeStates { get; set; }
     public Dictionary<string, HashSet<int>> StateLookup { get; set; }
     public List<Dictionary<string,IStateAction>> FSM { get; set; }
@@ -16,7 +16,7 @@ public class StateMachine
     public StateMachine(Grammar g)
     {
         Grammar = g;
-        States = new List<HashSet<Gitem>>(8*1024);
+        States = new List<SortedSet<Gitem>>(8*1024);
         StateLookup = new Dictionary<string, HashSet<int>>(1024);
         SameSizeStates = new Dictionary<int, HashSet<int>>(1024);
         FSM = new List<Dictionary<string, IStateAction>>(8*1024);     
@@ -25,8 +25,8 @@ public class StateMachine
     public void makegotos(short si)
     {
         bool TRACE = false;
-        HashSet<Gitem> state = States[si];
-        var newStates = new Dictionary<string, HashSet<Gitem>>();
+        SortedSet<Gitem> state = States[si];
+        var newStates = new Dictionary<string, SortedSet<Gitem>>();
         var keyList = new List<string>();
         foreach (Gitem item in state)
         {
@@ -36,10 +36,10 @@ public class StateMachine
                 var nextSym = rule.Rhs[item.Pi].Sym;
                 if (!newStates.ContainsKey(nextSym))
                 {
-                    newStates.Add(nextSym, new HashSet<Gitem>(1024));
+                    newStates.Add(nextSym, new SortedSet<Gitem>());
                     keyList.Add(nextSym);
                 }
-                HashSet<Gitem> symState = newStates[nextSym];
+                SortedSet<Gitem> symState = newStates[nextSym];
                 var newItem = new Gitem(item.Ri, item.Pi+1, item.La);
                 symState.Add(newItem);
             }
@@ -123,7 +123,7 @@ public class StateMachine
         // pretty print fsm
     }//makegotos
 
-    private bool stateeq(HashSet<Gitem> s1, HashSet<Gitem> s2)
+    private bool stateeq(SortedSet<Gitem> s1, SortedSet<Gitem> s2)
     {
         if (s1.Count != s2.Count) return false;
         foreach (Gitem x in s1) {
@@ -133,7 +133,7 @@ public class StateMachine
         return true;
     }
     public static int cx =0;
-    public void AddState(HashSet<Gitem> state, short psi, string nextSym)
+    public void AddState(SortedSet<Gitem> state, short psi, string nextSym)
     {
         bool TRACE = false;
         var indexsave = States.Count; // getting the index of the state
@@ -193,7 +193,7 @@ public class StateMachine
     public void generatefsm()
     {
         bool TRACE = false;
-        HashSet<Gitem> startState = new HashSet<Gitem>();
+        SortedSet<Gitem> startState = new SortedSet<Gitem>();
         if(TRACE) {
             Console.WriteLine("*** Rules ***");
             foreach(GrammarRule gr in Grammar.Rules) {
@@ -241,7 +241,7 @@ public class StateMachine
 	Console.WriteLine($"number of states: {States.Count}");	
     }
 
-    public void PrintSet(HashSet<Gitem> set)
+    public void PrintSet(SortedSet<Gitem> set)
     {
         foreach (var item in set)
         {
@@ -249,7 +249,7 @@ public class StateMachine
         }
     }
 
-    public void prettyPrintFSM(HashSet<Gitem> states, Grammar grammar)    
+    public void prettyPrintFSM(SortedSet<Gitem> states, Grammar grammar)    
     {   
         Gitem state = new Gitem();
         foreach (var item in states) { state = item; break; }
@@ -366,7 +366,7 @@ public class StateMachine
         g.PrintNullable();
         // Console.WriteLine("GrammarSym:" + g.Rules[0].Rhs[0]);
         
-        var itemSet = new HashSet<Gitem>(256);  //(new GitemComparer());
+        var itemSet = new SortedSet<Gitem>(new GitemComparer());
         g.StateClosure(itemSet);
         StateMachine sm = new StateMachine(g);
         Console.WriteLine("Gonna generate");
