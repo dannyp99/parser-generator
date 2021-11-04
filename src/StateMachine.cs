@@ -8,6 +8,7 @@ public class StateMachine
 {
     public Grammar Grammar { get; set; }
     public List<SortedSet<Gitem>> States { get; set; }
+    public Dictionary<int, HashSet<int>> SameSizeStates { get; set; }
     public Dictionary<string, HashSet<int>> StateLookup { get; set; }
     public List<Dictionary<string,IStateAction>> FSM { get; set; }
 
@@ -16,11 +17,13 @@ public class StateMachine
         Grammar = g;
         States = new List<SortedSet<Gitem>>(8*1024);
         StateLookup = new Dictionary<string, HashSet<int>>(1024);
+        SameSizeStates = new Dictionary<int, HashSet<int>>(1024);
         FSM = new List<Dictionary<string, IStateAction>>(8*1024);     
     }
 
     public void makegotos(short si)
     {
+        bool TRACE = false;
         SortedSet<Gitem> state = States[si];
         var newStates = new Dictionary<string, SortedSet<Gitem>>();
         var keyList = new List<string>();
@@ -74,12 +77,16 @@ public class StateMachine
                 }
                 if (change)
                 {   
-                    Console.WriteLine("Rule Index: " + item.Ri + " ; lookahead: " + item.La);
+                    if (TRACE) {
+                        Console.WriteLine("Rule Index: " + item.Ri + " ; lookahead: " + item.La);
+                    }
                     if (item.Ri == Grammar.Rules.Count - 1 )
                     {
                         Console.WriteLine("ACCEPT this item");
                         FSM[si].Add(item.La, new Accept());
-                        Console.WriteLine("***FSM["+si+"]["+item.La+"]=Accept");
+                        if (TRACE) {
+                            Console.WriteLine("***FSM["+si+"]["+item.La+"]=Accept");
+                        }
                     }
                     else {
                         FSM[si].Add(item.La, new Reduce(item.Ri));
@@ -88,19 +95,26 @@ public class StateMachine
                 }// add IStateAction
             }//set reduce action
         }// for each item
-        Console.WriteLine("###FSM :: After Makegotos main loop. Before AddState loop");
+        if (TRACE)
+        {
+            Console.WriteLine("###FSM :: After Makegotos main loop. Before AddState loop");
+        }
         // Pretty print FSM
         foreach (var key in keyList)
         {
             if(newStates.ContainsKey(key))
             {
-                Console.WriteLine("newStates[" + key + "]:: ");
-                PrintSet(newStates[key]);
+                if (TRACE) {
+                    Console.WriteLine("newStates[" + key + "]:: ");
+                    PrintSet(newStates[key]);
+                }
                 Grammar.StateClosure(newStates[key]);//Fill state
                 AddState(newStates[key],si,key);
             }
         }
-        Console.WriteLine("###FSM :: After Addstate loop in Makegotos");
+        if (TRACE) {
+            Console.WriteLine("###FSM :: After Addstate loop in Makegotos");
+        }
         // pretty print fsm
     }//makegotos
 
@@ -117,9 +131,20 @@ public class StateMachine
     {
         bool TRACE = false;
         var indexsave = States.Count; // getting the index of the state
-        int toAdd = indexsave;
-        for (int i = 0; i < States.Count; i++)
+        HashSet<int> sameSizeIndecies;
+        if (SameSizeStates.ContainsKey(state.Count))
         {
+         sameSizeIndecies = SameSizeStates[state.Count];   
+        } else {
+            sameSizeIndecies = new HashSet<int>(1024);
+            SameSizeStates.Add(state.Count, sameSizeIndecies);
+        }
+        //Console.WriteLine(sameSizeIndecies.Count);
+        int toAdd = indexsave;
+        Console.WriteLine("Number of items: " + state.Count);
+        foreach (int i in sameSizeIndecies)
+        {
+            Console.WriteLine("index: " + i + " items: " + States[i].Count);
             if (stateeq(state,States[i])) {
                 toAdd=i; break;
             }
@@ -130,6 +155,7 @@ public class StateMachine
                 PrintSet(state);
             }
             States.Add(state);
+            SameSizeStates[state.Count].Add(States.Count - 1);
             FSM.Add(new Dictionary<string, IStateAction>());
         }
 
@@ -189,7 +215,9 @@ public class StateMachine
 
         short closed = 0;
         while(closed < States.Count){ 
-            Console.WriteLine("***number of Closed States = " + closed + " number of States " + States.Count);
+            if (TRACE) {
+                Console.WriteLine("***number of Closed States = " + closed + " number of States " + States.Count);
+            }
             makegotos(closed);
             closed +=1;
             // Console.WriteLine(closed + " : " + States.Count);
@@ -325,12 +353,17 @@ public class StateMachine
         var itemSet = new SortedSet<Gitem>(new GitemComparer());
         g.StateClosure(itemSet);
         StateMachine sm = new StateMachine(g);
+        Console.WriteLine("Gonna generate");
         sm.generatefsm();
+        Console.WriteLine("Done Generating");
         
         //for(int i=0;i<sm.States.Count;i++)
           //{sm.prettyPrintFSM(sm.States[i], g);  Console.WriteLine("---State "+i+" above-------"); }
-        string testpath = "./writefsmTests/test.cs";
+
+        string testpath = "./test.cs";
+        Console.WriteLine("Gonna Write");
         sm.writefsm(testpath);
+        Console.WriteLine("Done Writing");
 
         string srcfile = "./lexer/simpleTest.txt";
         simpleLexer SLexer = new simpleLexer(srcfile, "EOF");
