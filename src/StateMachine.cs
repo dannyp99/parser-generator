@@ -360,16 +360,16 @@ public class StateMachine
         //for(int i=0;i<sm.States.Count;i++)
           //{sm.prettyPrintFSM(sm.States[i], g);  Console.WriteLine("---State "+i+" above-------"); }
 
-        // string testpath = "./test.cs";
-        // Console.WriteLine("Gonna Write");
-        // sm.writefsm(testpath);
-        // Console.WriteLine("Done Writing");
+        string testpath = "./test.cs";
+        Console.WriteLine("Gonna Write");
+        sm.writefsm(testpath);
+        Console.WriteLine("Done Writing");
 
-        // string srcfile = "./lexer/simpleTest.txt";
-        // simpleLexer SLexer = new simpleLexer(srcfile, "EOF");
-        // Parser<object> Par = Generator.make_parser();
-        // var t = Par.Parse(SLexer);
-        // Console.WriteLine("Result: "+t);
+        string srcfile = "./lexer/simpleTest.txt";
+        simpleLexer SLexer = new simpleLexer(srcfile, "EOF");
+        Parser<object> Par = Generator.make_parser();
+        var t = Par.Parse(SLexer);
+        Console.WriteLine("Result: "+t);
         
     }//main
 }
