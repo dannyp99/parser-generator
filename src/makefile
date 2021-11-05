@@ -1,8 +1,7 @@
 LEX=./lexer
 
 run: Parser.exe
-#	-mono Parser.exe < ../test_grammars/java14.grammar
-	-mono Parser.exe < ../mg.grammar
+	-mono Parser.exe
 	@rm Parser.exe # Quietly remove the executable
 .PHONY: run
 

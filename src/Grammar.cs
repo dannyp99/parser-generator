@@ -94,8 +94,8 @@ public class Grammar
     public List<GrammarRule> Rules { get; set; }
     public string TopSym { get; set; }
     public int Linenum { get; set; } // only for meta parser
-    public SortedSet<string> Nullable { get; set; }
-    public Dictionary<string, SortedSet<string>> First { get; set; }
+    public HashSet<string> Nullable { get; set; }
+    public Dictionary<string, HashSet<string>> First { get; set; }
     public Dictionary<string, HashSet<int>> Rulesfor { get; set; }
 
     public Grammar()
@@ -104,8 +104,8 @@ public class Grammar
         Rules = new List<GrammarRule>();
         TopSym = string.Empty;
         Linenum = 0;
-        Nullable = new SortedSet<string>();
-        First = new Dictionary<string, SortedSet<string>>();
+        Nullable = new HashSet<string>();
+        First = new Dictionary<string, HashSet<string>>();
         Rulesfor = new Dictionary<string, HashSet<int>>();
     }
 
@@ -262,7 +262,7 @@ public class Grammar
     public void ComputeFirst()
     {
 	    ComputeNullable();
-        var FIRST = new Dictionary<string, SortedSet<string>>();
+        var FIRST = new Dictionary<string, HashSet<string>>();
         var changed = true;
         while (changed)
         {
@@ -273,7 +273,7 @@ public class Grammar
                 if (!FIRST.ContainsKey(nt))
                 {
                     changed = true;
-                    FIRST.Add(nt, new SortedSet<string>());
+                    FIRST.Add(nt, new HashSet<string>());
                 }
                 var Firstnt = FIRST[nt];
                 var i = 0;
@@ -287,7 +287,7 @@ public class Grammar
                         isNullable = false;
                     }
                     else if (gs.Sym != nt) { // non-terminal
-                        var firstGs = new SortedSet<string>();
+                        var firstGs = new HashSet<string>();
                         if (FIRST.TryGetValue(gs.Sym, out firstGs)) {
                             foreach (var sym in firstGs)
                             {
@@ -367,12 +367,13 @@ public class Grammar
     // generate lr(1) closure
     public void StateClosure(HashSet<Gitem> States) //change paramter to Grammar if moved to LR1State class
     {
-        while (States.Any(x => !x.Processed)) //while any states is not processed.
+        var closed = new Stack<Gitem>(States);
+        while (closed.Count > 0) //while any states is not processed.
         {
-            var state = States.FirstOrDefault(x => !x.Processed); //returns first state that is not processed or null otherwise.
+            var state = closed.Pop(); //returns first state that is not processed or null otherwise.
             if (state != null)
             {
-                state.Processed = true; // process one item
+                //state.Processed = true; // process one item
                 int ri = state.Ri; // ri is the index of the rule
                 int pi = state.Pi; // position of next symbol after dot
                 string la = state.La;
@@ -391,6 +392,7 @@ public class Grammar
                             if (!States.Contains(newItem)) 
                             {
                                 States.Add(newItem);
+                                closed.Push(newItem);
                                 //Ask how if the check is needed and if this should change to State addition
                             }
                         }//foreach lookahead

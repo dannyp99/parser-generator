@@ -29,7 +29,7 @@ public class Parser<Object>
         Rules = new List<RGrule>(rlen);
 
         for(int i = 0; i < slen; i++) {
-            RSM.Add(new Dictionary<string,IStateAction>());
+            RSM.Add(new Dictionary<string,IStateAction>(1024));
         }
     }
 
@@ -40,7 +40,7 @@ public class Parser<Object>
         bool TRACE = false;
         absLexer abstractLex = new concreteLexer();
         object result = default(object);
-        Stack<StackElement<object>> stack = new Stack<StackElement<object>>();
+        Stack<StackElement<object>> stack = new Stack<StackElement<object>>(8*1024);
 
         stack.Push(new StackElement<object>(0,default(object)));
         //Error handling line

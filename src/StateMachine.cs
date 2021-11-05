@@ -10,14 +10,12 @@ public class StateMachine
     public Grammar Grammar { get; set; }
     public List<HashSet<Gitem>> States { get; set; }
     public Dictionary<int, HashSet<int>> SameSizeStates { get; set; }
-    public Dictionary<string, HashSet<int>> StateLookup { get; set; }
     public List<Dictionary<string,IStateAction>> FSM { get; set; }
 
     public StateMachine(Grammar g)
     {
         Grammar = g;
         States = new List<HashSet<Gitem>>(8*1024);
-        StateLookup = new Dictionary<string, HashSet<int>>(1024);
         SameSizeStates = new Dictionary<int, HashSet<int>>(1024);
         FSM = new List<Dictionary<string, IStateAction>>(8*1024);     
     }
@@ -26,10 +24,10 @@ public class StateMachine
     {
         bool TRACE = false;
         HashSet<Gitem> state = States[si];
-        var newStates = new Dictionary<string, HashSet<Gitem>>();
-        var keyList = new List<string>();
+        var newStates = new Dictionary<string, HashSet<Gitem>>(1024);
         foreach (Gitem item in state)
         {
+            //Console.WriteLine($"Gitem: {item}");
             var rule = Grammar.Rules[item.Ri];
             if (item.Pi < rule.Rhs.Count) // Can go to
             {
@@ -37,24 +35,21 @@ public class StateMachine
                 if (!newStates.ContainsKey(nextSym))
                 {
                     newStates.Add(nextSym, new HashSet<Gitem>(1024));
-                    keyList.Add(nextSym);
                 }
-                HashSet<Gitem> symState = newStates[nextSym];
-                var newItem = new Gitem(item.Ri, item.Pi+1, item.La);
-                symState.Add(newItem);
+                newStates[nextSym].Add(new Gitem(item.Ri, item.Pi+1, item.La));
             }
             else {
                 IStateAction currentAction;
                 FSM[si].TryGetValue(item.La, out currentAction);
                 var change = true;
                 if(currentAction != null) {
-                    if (currentAction is Reduce r && r.Next < item.Ri)//simulated pattern matching
+                    if (currentAction is Reduce && currentAction.Next < item.Ri)//simulated pattern matching
                     {   
                         change = false;
                         Console.WriteLine("Reduce-Reduce conflict!");
                         //PrintState()
                     }
-                    else if (currentAction is Reduce r2 && r2.Next > item.Ri)
+                    else if (currentAction is Reduce && currentAction.Next > item.Ri)
                     {
                         change = false;
                         Console.WriteLine("Reduce-Reduce conflict!");
@@ -101,22 +96,15 @@ public class StateMachine
             Console.WriteLine("###FSM :: After Makegotos main loop. Before AddState loop");
         }
         // Pretty print FSM
-        var watch = new Stopwatch();
-        watch.Start();
-        foreach (var key in keyList)
+        foreach (var key in newStates.Keys)
         {
-            if(newStates.ContainsKey(key))
-            {
-                if (TRACE) {
-                    Console.WriteLine("newStates[" + key + "]:: ");
-                    PrintSet(newStates[key]);
-                }
-                Grammar.StateClosure(newStates[key]);//Fill state
-                AddState(newStates[key],si,key);
+            if (TRACE) {
+                Console.WriteLine("newStates[" + key + "]:: ");
+                PrintSet(newStates[key]);
             }
+            Grammar.StateClosure(newStates[key]);//Fill state
+            AddState(newStates[key],si,key);
         }
-        watch.Stop();
-//        Console.WriteLine($" time for  StateClosure & AddState loop {watch.ElapsedMilliseconds}");
         if (TRACE) {
             Console.WriteLine("###FSM :: After Addstate loop in Makegotos");
         }
@@ -193,7 +181,7 @@ public class StateMachine
     public void generatefsm()
     {
         bool TRACE = false;
-        HashSet<Gitem> startState = new HashSet<Gitem>();
+        HashSet<Gitem> startState = new HashSet<Gitem>(1024);
         if(TRACE) {
             Console.WriteLine("*** Rules ***");
             foreach(GrammarRule gr in Grammar.Rules) {
@@ -221,11 +209,9 @@ public class StateMachine
         States.Add(startState);
         SameSizeStates[startState.Count] = new HashSet<int>(1024);
         SameSizeStates[startState.Count].Add(States.Count - 1);
-        FSM.Add(new Dictionary<string,IStateAction>());
+        FSM.Add(new Dictionary<string,IStateAction>(1024));
 
         short closed = 0;
-        var watch = new Stopwatch();
-        watch.Start();
         while(closed < States.Count){ 
             if (TRACE) {
                 Console.WriteLine("***number of Closed States = " + closed + " number of States " + States.Count);
@@ -234,8 +220,6 @@ public class StateMachine
             closed +=1;
             // Console.WriteLine(closed + " : " + States.Count);
         }
-        watch.Stop();
-        Console.WriteLine($"MakeGOTOS: {watch.ElapsedMilliseconds}");
 	////
 	Console.WriteLine($"cx, number of states to compare eq with: {cx}");
 	Console.WriteLine($"number of states: {States.Count}");	
