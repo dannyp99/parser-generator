@@ -346,8 +346,8 @@ public class StateMachine
         // }
         
         g.ComputeFirst();
-        g.PrintFirst();
-        g.PrintNullable();
+        //g.PrintFirst();
+        //g.PrintNullable();
         // Console.WriteLine("GrammarSym:" + g.Rules[0].Rhs[0]);
         
         var itemSet = new HashSet<Gitem>(256);  //(new GitemComparer());
