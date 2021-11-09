@@ -31,6 +31,9 @@ public class StateMachine
             var rule = Grammar.Rules[item.Ri];
             if (item.Pi < rule.Rhs.Count) // Can go to
             {
+                if (TRACE) {
+                    Console.WriteLine("Item.Pi < rule.Rhs.Count");
+                }
                 var nextSym = rule.Rhs[item.Pi].Sym;
                 if (!newStates.ContainsKey(nextSym))
                 {
@@ -278,7 +281,7 @@ public class StateMachine
                     Console.WriteLine(Grammar.Rules.Count);
                 }
                 sw.Write("rule = new RGrule(\"{0}\");\n",Grammar.Rules[i].Lhs.Sym);
-                sw.Write("rule.RuleAction = (pstack) => { "); //lambda stuff
+                sw.Write("rule.RuleAction = (pstack) => { ");
                 int k = Grammar.Rules[i].Rhs.Count;
                 while(k>0) {
                     GrammarSym gsym = Grammar.Rules[i].Rhs[k-1];
@@ -332,12 +335,13 @@ public class StateMachine
     }//writefsm
     
         //bool TRACE = false;
-        public static void Main(string[] argv) {
+    public static void Main(string[] argv) {
         Grammar g = new Grammar();
         if (argv.Length > 0) {
             g.TRACE = false;
         }
         g.ParseStdin();
+        
         if (g.TRACE) {Console.Write("\n");}
         // Console.WriteLine("info:");
         // Console.WriteLine("topsym: " + g.TopSym);
@@ -359,17 +363,21 @@ public class StateMachine
         
         //for(int i=0;i<sm.States.Count;i++)
           //{sm.prettyPrintFSM(sm.States[i], g);  Console.WriteLine("---State "+i+" above-------"); }
-
-        string testpath = "./test.cs";
-        Console.WriteLine("Gonna Write");
+        string testpath = "./writefsmTests/par.cs";
         sm.writefsm(testpath);
-        Console.WriteLine("Done Writing");
-
-        string srcfile = "./lexer/simpleTest.txt";
-        simpleLexer SLexer = new simpleLexer(srcfile, "EOF");
-        Parser<object> Par = Generator.make_parser();
-        var t = Par.Parse(SLexer);
-        Console.WriteLine("Result: "+t);
-        
+         
+        if(argv.Length == 0) { 
+            
+            const string srcfile = "./lexer/simpleTest.txt";
+            simpleLexer SLexer = new simpleLexer(srcfile, "EOF");
+            Parser<object> Par = Generator.make_parser();
+            Expr t = (Expr)Par.Parse(SLexer);
+            int ans = t.Eval();
+            Console.WriteLine("Result: "+t); 
+            Console.WriteLine(ans);
+        }
+        else {
+            Console.WriteLine("There is no given test file to parse. the Parser has been generated in ./writefsm");
+        }
     }//main
 }

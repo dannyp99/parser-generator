@@ -26,7 +26,7 @@ rule = new RGrule("F");
 rule.RuleAction = (pstack) => {  int n = (int)pstack.Pop().Value; return n; };
 parser1.Rules.Add(rule);
 rule = new RGrule("START");
-rule.RuleAction = (pstack) => { pstack.Pop();  int e = (int)pstack.Pop().Value; return default(object);};
+rule.RuleAction = (pstack) => { pstack.Pop(); pstack.Pop(); return default(object);};
 parser1.Rules.Add(rule);
 parser1.RSM[0].Add("E",new GotoState(1));
 parser1.RSM[0].Add("T",new GotoState(2));
