@@ -1,4 +1,5 @@
 using System;
+using static FSEvaluator;
 public class concreteLexer : simpleLexer {
 
     public concreteLexer() {}
@@ -7,7 +8,7 @@ public class concreteLexer : simpleLexer {
 
     public override lexToken translate_token(lexToken t)
     {
-        if (t.token_type == "Integer") { t.token_type = "int"; t.token_value = new Val((int)t.token_value); } // This is going to scream that it has no idea what a val is
+        if (t.token_type == "Integer") { t.token_type = "int"; t.token_value = NewVal((int)t.token_value); }
         else if (t.token_type == "Symbol") {
             t.token_type = (string) t.token_value;
         }

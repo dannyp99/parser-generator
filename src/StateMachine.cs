@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Diagnostics;
+using static FSEvaluator;
 
 //used in write_fsm becasue we need state indices and their semantic action combined.
 
@@ -268,6 +269,7 @@ public class StateMachine
             sw.Write("using System.Collections;\n");
             sw.Write("using System.Collections.Generic;\n");
             sw.Write("using System.Linq;\n");
+            sw.Write("using static FSEvaluator;\n");
             sw.Write("class Generator{\n");
             string TAT = "object"; // can be replaced w/ object
 
@@ -365,16 +367,14 @@ public class StateMachine
           //{sm.prettyPrintFSM(sm.States[i], g);  Console.WriteLine("---State "+i+" above-------"); }
         string testpath = "./writefsmTests/par.cs";
         sm.writefsm(testpath);
-         
-        if(argv.Length == 0) { 
-            
+        
+        if(argv.Length == 1) {     
             const string srcfile = "./lexer/simpleTest.txt";
             simpleLexer SLexer = new simpleLexer(srcfile, "EOF");
             Parser<object> Par = Generator.make_parser();
-            Expr t = (Expr)Par.Parse(SLexer);
-            int ans = t.Eval();
+            expr t = (expr)Par.Parse(SLexer);
+            run(t);
             Console.WriteLine("Result: "+t); 
-            Console.WriteLine(ans);
         }
         else {
             Console.WriteLine("There is no given test file to parse. the Parser has been generated in ./writefsm");

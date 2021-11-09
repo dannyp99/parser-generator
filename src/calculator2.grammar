@@ -1,8 +1,8 @@
 # ambiguous grammar for online calculator
 
-nonterminal E Expr
+nonterminal E expr
 terminal + - * ( )
-typedterminal int Expr
+typedterminal int expr
 topsym E
 
 left * 500
@@ -13,9 +13,9 @@ left ( 900
 left int 980
 
 E --> int:n { return n; }
-E --> E:e1 + E:e2 { return new Plus(e1,e2); }
-E --> E:e1 - E:e2 { return new Minus(e1,e2); }
-E --> E:e1 * E:e2 { return new Times(e1,e2); }
-E --> - E:e { return new Negative(e); }
+E --> E:e1 + E:e2 { return NewPlus(e1,e2); }
+E --> E:e1 - E:e2 { return NewSubtract(e1,e2); }
+E --> E:e1 * E:e2 { return NewTimes(e1,e2); }
+E --> - E:e { return NewUminus(e); }
 E --> ( E:e )  { return e; }
 EOF
