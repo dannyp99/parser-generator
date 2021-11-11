@@ -367,8 +367,8 @@ public class StateMachine
           //{sm.prettyPrintFSM(sm.States[i], g);  Console.WriteLine("---State "+i+" above-------"); }
         string testpath = "./writefsmTests/par.cs";
         sm.writefsm(testpath);
-        
-        if(argv.Length == 1) {     
+         
+        if(argv.Length == 0) {     
             const string srcfile = "./lexer/simpleTest.txt";
             simpleLexer SLexer = new simpleLexer(srcfile, "EOF");
             Parser<object> Par = Generator.make_parser();

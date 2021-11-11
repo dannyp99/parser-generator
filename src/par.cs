@@ -2,7 +2,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using static FSEvaluator;class Generator{
+using static FSEvaluator;
+class Generator{
 public static Parser<object> make_parser()
 {
 Parser<object> parser1 = new Parser<object>(7,27);
