@@ -1,16 +1,19 @@
 LEX=./lexer
 
-run: Parser.exe
-	-mono Parser.exe
-	@rm Parser.exe # Quietly remove the executable
+run: ParGen.exe
+	-mono ParGen.exe
+	@rm ParGen.exe # Quietly remove the executable
 .PHONY: run
 
-Parser.exe: simpleLexer.dll
-	mcs *.cs -r:simpleLexer.dll -out:Parser.exe
+ParGen.exe: lexer.dll
+	mcs *.cs -r:lexer.dll,parser.dll -out:ParGen.exe
 
-simpleLexer.dll: $(LEX)/*.cs
-	mcs $(LEX)/*.cs -target:library -out:simpleLexer.dll
+lexer.dll: $(LEX)/*.cs parser.dll
+	mcs $(LEX)/*.cs -r:parser.dll -target:library -out:lexer.dll
+
+parser.dll: parser.fs
+	fsharpc parser.fs -a --out:parser.dll
 
 clean:
-	rm -rf *.exe simpleLexer.dll
+	rm -rf *.exe *.dll
 .PHONY: clean
