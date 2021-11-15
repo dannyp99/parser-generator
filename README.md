@@ -1,14 +1,11 @@
 # Parser Generator
 
-To build:
+Build and Run all with one make
+
 ```bash
-cd src
-make
+make < ./path_to_file.grammar
 ```
 
-To run:
-```bash
-./Grammar.exe < [path_to_grammar]
-```
+If the `.exe` file is not automatically deleted please do so to enforce make to recompile.
 
-Linux users invoke with `mono` if necessary.
+*Or* run `make clean` to enforce makefile to rebuild dlls and exe.
