@@ -18,10 +18,11 @@ public class StackElement<Object>
     }
 }
 
-public class Parser<Object>
+public class Parser<Object>  
 {
     public List<Dictionary<string,IStateAction>> RSM;
     public List<RGrule> Rules;
+    public string ReSyncSymbol { get; set; }
 
     public Parser(int rlen, int slen) 
     {
@@ -37,7 +38,7 @@ public class Parser<Object>
     // line 1064 of Rust
     public object Parse(simpleLexer tokenizer)
     {
-        bool TRACE = false;
+        bool TRACE = true;
         absLexer abstractLex = new concreteLexer();
         object result = default(object);
         Stack<StackElement<object>> stack = new Stack<StackElement<object>>(8*1024);

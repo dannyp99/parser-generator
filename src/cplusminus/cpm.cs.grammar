@@ -1,59 +1,41 @@
 # grammar for "C-plus-minus"
 
 # Anything on a ! line will be inserted verbatim into the generated parser
-! // still need to put into a crate
-!use rustlr::{Lextoken,Lexer};
-!use std::io::{Write};
+!// Needs to be compiled with both .dlls (all .dlls?)
+!//using System;
 !
-!fn readln()-> String {
-!  let mut s = String::new();
-!  std::io::stdin().read_line(&mut s);
-!  s
-!}
-!
-!struct Slex<'t> {
-! split : std::str::SplitWhitespace<'t>,
-!}
-!impl<'t> Lexer<String> for Slex<'t> {
-!  fn nextsym(&mut self) -> Option<Lextoken<String>> {
-!    match self.split.next() {
-!     None => None,
-!     Some(sym) => Some(Lextoken::new(sym.trim().to_string(), sym.to_string())),
-!    }//match
-!  }//nextsym
-!  fn linenum(&self) -> usize {0}
-!  fn column(&self) -> usize {0} // not accurate, just filler
-!}
-!
-!fn main() {
-!   print!("Write something in C+- : ");
-!   std::io::stdout().flush().unwrap();
-!   let input = readln();
-!   let mut lexer1 =  Slex{split:input.split_whitespace()};
-!   let mut parser1 = make_parser();
-!   parser1.parse( &mut lexer1);
-!   println!("parsing success: {}",!parser1.error_occurred());
-!}//main
+!// Do we even need this? I don't know if it fits into how we are doing things
+!//public static void Main(string[] argv]) {
+!   //Console.WriteLine("Write something in C+- : "); // Changed
+!   //string input = Console.ReadLine();  // Changed
+!   //simpleLexer lexer1 =  new simpleLexer(srcfile, "EOF"); // Changed
+!   //Parser<object> parser = Generator.make_parser(); // Changed
+!   //parser1.parse(lexer1); // Changed
+!//}//main
 
-grammarname cpm
-absyntype String
-nonterminals STAT STATLIST EXPR
-nonterminal EXPRLIST mut
-terminals x y z cin cout ; ( ) << >> ERROR
+#grammarname cpm
+absyntype string
+# is there a difference between nonterminals and nonterminal?
+nonterminals STAT STATLIST EXPR 
+nonterminal EXPRLIST string
+# Above line may cause issue because in our case is it an "FSharpType"
+terminal x y z cin cout ; ( ) << >>
 topsym STATLIST
-errsym ERROR
-#resync ;
+resync ;
 
-STATLIST --> STAT  |  STATLIST STAT 
-STAT --> cin >> EXPR ; {readln()}
-STAT --> cout << EXPRLIST:s ; {println!(": {}",&s); String::new()}
+STATLIST --> STAT 
+STATLIST --> STATLIST STAT 
+STAT --> cin >> EXPR { return Console.ReadLine(); }
+STAT --> cout << EXPRLIST:s { Console.WriteLine(": " + s); return ""; }
 
-EXPR --> x {"x".to_string()} | y {"y".to_string()}  | z {"z".to_string()}
-EXPR --> ( EXPR:s ) {s}
-EXPRLIST --> EXPR:s {s}
-EXPRLIST --> EXPRLIST:sl << EXPR:s { format!("{} {}",sl,s) }
+EXPR --> x { return "x"; }  
+EXPR --> y { return "y"; } 
+EXPR --> z { return "z"; }
+EXPR --> ( EXPR:s ) { return s; }
+EXPRLIST --> EXPR:s { return s; }
+EXPRLIST --> EXPRLIST:sl << EXPR:s { return String.Format("{0} {1}",sl,s); }
 
-STAT --> ERROR ; { parser.report("invalid statement, skipping to ;"); String::new()}
+# STAT --> ERROR  { parser.report("invalid statement, skipping to ;"); String::new(); }
 
 EOF
 

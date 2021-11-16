@@ -106,6 +106,9 @@ public class Grammar
     public HashSet<string> Nullable { get; set; }
     public Dictionary<string, HashSet<string>> First { get; set; }
     public Dictionary<string, HashSet<int>> Rulesfor { get; set; }
+    public string Extras { get; set; } // information for parsergenerator and parsing
+    public string ReSync { get; set; } // information for parsergenerator and parsing
+    public string AbsynType { get; set; } // information for writefsm
 
     public Grammar()
     {
@@ -116,6 +119,7 @@ public class Grammar
         Nullable = new HashSet<string>();
         First = new Dictionary<string, HashSet<string>>();
         Rulesfor = new Dictionary<string, HashSet<int>>();
+        AbsynType = null;
     }
 
     public bool NonTerminal(string s)
@@ -151,7 +155,12 @@ public class Grammar
         }
         Console.WriteLine();
     }
-
+    
+    // Maybe TODO:
+        // right now semantic actions HAVE to be { <semantic action code> }
+        // and cannot be {<sematic action code>} because the {}'s will  be joined to the last and
+        // first tokens.
+        // this was encountered with the cpm.cs.grammar and could be a fine tune for the future.
     public void ParseStdin()
     {
         bool TRACE = false;
@@ -165,6 +174,9 @@ public class Grammar
             if (line == null)
             {
                 atEOF = true;
+            }
+            else if (line.Length > 1 && line[0] == '!') {
+               Extras = Extras + line.Substring(1) + '\n';
             }
             else if (line.Length > 1 && line[0] != '#')
             {
@@ -189,19 +201,29 @@ public class Grammar
                             newTerm = new GrammarSym(toks[i],true);
                             Symbols.Add(toks[i], newTerm);
                         }
+                        if(TRACE) {
+                            Console.WriteLine("****Termnial "); // nonterminals do not have a label at this point
+                        }
                         break;
                     case "typedterminal":
                         newTerm = new GrammarSym(toks[1],true);
                         newTerm.FsharpType = toks[2];
                         Symbols.Add(toks[1],newTerm);
                         break;
-                   case "nonterminal":
+                    case "nonterminal":
                         newTerm = new GrammarSym(toks[1],false);
                         newTerm.FsharpType = toks[2];
                         if(TRACE) {
-                            Console.WriteLine("****NonTermincal " + newTerm); // nonterminals do not have a label at this point
+                            Console.WriteLine("****NonTerminal " + newTerm); // nonterminals do not have a label at this point
                         }
                         Symbols.Add(toks[1],newTerm);
+                        break;
+                    case "nonterminals":
+                        for(int i = 1; i < toks.Count; i++) {
+                            newTerm = new GrammarSym(toks[i],false);
+                            newTerm.FsharpType = AbsynType;
+                            Symbols.Add(toks[i], newTerm);
+                        }
                         break;
                     case "topsym":
                         if (TRACE) {Console.WriteLine("topsym");}
@@ -220,6 +242,12 @@ public class Grammar
                         
 
                         if (TRACE) {Console.WriteLine("left/right {0} {1}",toks[1],preclevel);}
+                        break;
+                    case "resync":
+                        ReSync = toks[1];
+                        break;
+                    case "absyntype":
+                        AbsynType = toks[1];
                         break;
                     default:
                         if (NonTerminal(toks[0]) && toks[1] == "-->") {
@@ -280,8 +308,10 @@ public class Grammar
         startRule.Rhs = temp.ToList();
 
         Rules.Add(startRule);
-        
-
+        if(TRACE){
+            Console.WriteLine("To be printed at the top of pargen: " + Extras);
+            Console.WriteLine("Resynce Symbol: " + ReSync);
+        }
     }
 
     public void ComputeFirst()

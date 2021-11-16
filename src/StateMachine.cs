@@ -262,16 +262,17 @@ public class StateMachine
 
     public void writefsm(string filename)
     {
-        bool TRACE = false;
+        bool TRACE = true;
         
         using (StreamWriter sw = new StreamWriter(filename)) {
             sw.Write("using System;\n");
             sw.Write("using System.Collections;\n");
             sw.Write("using System.Collections.Generic;\n");
             sw.Write("using System.Linq;\n");
-            sw.Write("using static FSEvaluator;\n");
+            sw.Write("using static FSEvaluator;\n\n");
             sw.Write("class Generator{\n");
-            string TAT = "object"; // can be replaced w/ object
+
+            string TAT = Grammar.AbsynType ?? "object"; // can be replaced w/ object
 
             sw.Write(String.Format("public static Parser<{0}> make_parser()",TAT));
             sw.Write("\n{\n");
@@ -288,6 +289,9 @@ public class StateMachine
                 while(k>0) {
                     GrammarSym gsym = Grammar.Rules[i].Rhs[k-1];
                     if(gsym.Label.Length > 0) {
+                        if(TRACE){
+                            Console.WriteLine("GrammarSymbol --> "+gsym.Sym+"("+gsym.FsharpType+")" + gsym.Label);
+                        }
                         sw.Write(" {0} {1} = ({0})pstack.Pop().Value; ",  gsym.FsharpType, gsym.Label);
                     }
                     else {
@@ -331,8 +335,11 @@ public class StateMachine
                     }
                 }
             }
-            sw.Write("return parser1;\n}//make_parser\n");
+            sw.Write("parser1.ReSyncSymbol = \"" + Grammar.ReSync + "\";\n");
+            sw.Write("return parser1;\n}//make_parser\n\n");
+            sw.Write(Grammar.Extras + '\n');
             sw.Write("} // Generator Class");
+
         } // Using StreamWriter  
     }//writefsm
     
@@ -366,12 +373,11 @@ public class StateMachine
         //for(int i=0;i<sm.States.Count;i++)
           //{sm.prettyPrintFSM(sm.States[i], g);  Console.WriteLine("---State "+i+" above-------"); }
         string testpath = "./writefsmTests/par.cs";
-        sm.writefsm(testpath);
-         
+        sm.writefsm(testpath); 
         if(argv.Length == 0) {     
-            const string srcfile = "./lexer/simpleTest.txt";
+            const string srcfile = "./cplusminus/cmpError.txt";
             simpleLexer SLexer = new simpleLexer(srcfile, "EOF");
-            Parser<object> Par = Generator.make_parser();
+            Parser<string> Par = Generator.make_parser();
             expr t = (expr)Par.Parse(SLexer);
             run(t);
             Console.WriteLine("Result: "+t); 

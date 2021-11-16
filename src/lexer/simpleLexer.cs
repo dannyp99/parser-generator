@@ -50,7 +50,7 @@ public class simpleLexer : absLexer
   public char commentchar = '#';  // lines starting with this are ignored
 
   string[] keywords = {"if","else","while","let","for","lambda"};
-  string[] multichar_syms = {"==","<=",">=","!=", "++","--","&&","||"};
+  string[] multichar_syms = {"==","<=",">=","!=", "++","--","&&","||", "<<", ">>"};
 
   HashSet<string> kwhash = new HashSet<string>();
   Dictionary<char,string> mshash = new Dictionary<char,string>();
