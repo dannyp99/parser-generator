@@ -1,0 +1,75 @@
+# LR(1) grammar (ambiguous) for Mongoose 0.2
+
+nonterminal E expr
+nonterminal ES expr
+terminal + - * / % ^ ( ) COLON = < <= == . ; && || ! 
+terminal if else while let cin cout lambda
+typedterminal Var string
+typedterminal Val int
+typedterminal Str string
+topsym E
+
+# only proper operators should need precedence declarations
+
+left + 200
+left - 300
+left * 400
+left / 500
+left % 500
+left ^ 550
+#left ( 990
+#left ) 20
+#left COLON 42
+left = 30
+left == 35
+left <= 35
+left < 35
+#left let 42
+#left while 40
+#left if 40
+#left else 22
+#left cin 100
+#left cout 100
+left && 190
+left || 192
+left ! 194
+#left Var 100
+#left Val 100
+#left Str 100
+#left lambda 22
+#right ; 22
+#left . 22
+
+# rx(e) - makes new reference counting pointer
+# Nothing - enum type. I think closest is EOF type
+E --> Val:n { return n }
+E --> ( E:e )  { return e }
+E --> ( Var:f E:x ) { return NewApp(getstr(f),x) }
+E --> cin { return NewUniop(2, EOF) }
+E --> cout Str:s { return NewUniop(3,s) } 
+E --> cout E:e { return NewUniop(3,e) }
+E --> E:a + E:b { return NewBinop(0,a,b) }
+E --> E:a - E:b { return NewBinop(1,a,b) }
+E --> E:a * E:b { return NewBinop(2,a,b) }
+E --> E:a / E:b { return NewBinop(3,a,b) }
+E --> E:a % E:b { return NewBinop(4,a,b) }
+E --> E:a ^ E:b { return NewBinop(5,a,b) }
+#E --> E:a = E:b { return NewBinop(6,a,b) }
+E --> E:a == E:b { return NewBinop(7,a,b) }
+E --> E:a < E:b { return NewBinop(8,a,b) }
+E --> E:a <= E:b { return NewBinop(9,a,b) }
+E --> while ( E:a ) E:b { return NewBinop(10,a,b) }
+E --> E:a && E:b { return NewBinop(11,a,b) }
+E --> E:a || E:b { return NewBinop(12,a,b) }
+E --> - E:e { return NewUniop(0,e) }
+E --> ! E:e { return NewUniop(1,e) }
+E --> let Var:x = E:e1 COLON E:e2 { return NewLetexp(GetStr(x),e1,e2) }
+E --> Var:x = E:e { return NewAssign(GetStr(x),e) }
+E --> lambda Var:x . E:e { return NewLambda(getstr(x),e) }
+E --> if E:c E:a  else E:b { return NewIfelse(rx(c),a,b) }
+E --> E:e ; ES:es { return NewSeq(e,es) }
+ES -->  { return NewEOF() }
+ES --> E:e ; ES:es { return NewSeq(e,es) }
+E --> Var:x { return NewVar(GetStr(x)) }
+
+EOF

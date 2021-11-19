@@ -1,12 +1,12 @@
 # LR(1) grammar (ambiguous) for Mongoose 0.2
 
-nonterminal E Expr
-nonterminal ES Expr
+nonterminal E expr
+nonterminal ES expr
 terminal + - * / % ^ ( ) COLON = < <= == . ; && || ! 
 terminal if else while let cin cout lambda
-typedterminal Var mut String
-typedterminal Val i32
-typedterminal Str String
+typedterminal Var mut string
+typedterminal Val int
+typedterminal Str string
 topsym E
 
 # only proper operators should need precedence declarations
@@ -40,34 +40,36 @@ left ! 194
 #right ; 22
 #left . 22
 
-E --> Val:n { n }
-E --> ( E:e )  { e }
-E --> ( Var:f E:x ) { App(getstr(f),rx(x)) }
-E --> cin { Uniop(2,rx(Nothing)) }
-E --> cout Str:s { Uniop(3,rx(s)) } 
-E --> cout E:e { Uniop(3,rx(e)) }
-E --> E:a + E:b { Binop(0,rx(a),rx(b)) }
-E --> E:a - E:b { Binop(1,rx(a),rx(b)) }
-E --> E:a * E:b { Binop(2,rx(a),rx(b)) }
-E --> E:a / E:b { Binop(3,rx(a),rx(b)) }
-E --> E:a % E:b { Binop(4,rx(a),rx(b)) }
-E --> E:a ^ E:b { Binop(5,rx(a),rx(b)) }
-#E --> E:a = E:b { Binop(6,rx(a),rx(b)) }
-E --> E:a == E:b { Binop(7,rx(a),rx(b)) }
-E --> E:a < E:b { Binop(8,rx(a),rx(b)) }
-E --> E:a <= E:b { Binop(9,rx(a),rx(b)) }
-E --> while ( E:a ) E:b { Binop(10,rx(a),rx(b)) }
-E --> E:a && E:b { Binop(11,rx(a),rx(b)) }
-E --> E:a || E:b { Binop(12,rx(a),rx(b)) }
-E --> - E:e { Uniop(0,rx(e)) }
-E --> ! E:e { Uniop(1,rx(e)) }
-E --> let Var:x = E:e1 COLON E:e2 { Letexp(getstr(x),rx(e1),rx(e2)) }
-E --> Var:x = E:e { Assign(getstr(x),rx(e)) }
-E --> lambda Var:x . E:e { Lambda(getstr(x),rx(e)) }
-E --> if E:c E:a  else E:b { Ifelse(rx(c),rx(a),rx(b)) }
-E --> E:e ; ES:es { Seq(rx(e),rx(es)) }
-ES -->  { Nothing }
-ES --> E:e ; ES:es { Seq(rx(e),rx(es)) }
-E --> Var:x { Var(getstr(x)) }
+# rx(e) - makes new reference counting pointer
+# Nothing - enum type. I think closes is EOF type
+E --> Val:n { return n }
+E --> ( E:e )  { return e }
+E --> ( Var:f E:x ) { return NewApp(getstr(f),rx(x)) }
+E --> cin { return NewUniop(2,rx(Nothing)) }
+E --> cout Str:s { return NewUniop(3,rx(s)) } 
+E --> cout E:e { return NewUniop(3,rx(e)) }
+E --> E:a + E:b { return NewBinop(0,rx(a),rx(b)) }
+E --> E:a - E:b { return NewBinop(1,rx(a),rx(b)) }
+E --> E:a * E:b { return NewBinop(2,rx(a),rx(b)) }
+E --> E:a / E:b { return NewBinop(3,rx(a),rx(b)) }
+E --> E:a % E:b { return NewBinop(4,rx(a),rx(b)) }
+E --> E:a ^ E:b { return NewBinop(5,rx(a),rx(b)) }
+#E --> E:a = E:b { return NewBinop(6,rx(a),rx(b)) }
+E --> E:a == E:b { return NewBinop(7,rx(a),rx(b)) }
+E --> E:a < E:b { return NewBinop(8,rx(a),rx(b)) }
+E --> E:a <= E:b { return NewBinop(9,rx(a),rx(b)) }
+E --> while ( E:a ) E:b { return NewBinop(10,rx(a),rx(b)) }
+E --> E:a && E:b { return NewBinop(11,rx(a),rx(b)) }
+E --> E:a || E:b { return NewBinop(12,rx(a),rx(b)) }
+E --> - E:e { return NewUniop(0,rx(e)) }
+E --> ! E:e { return NewUniop(1,rx(e)) }
+E --> let Var:x = E:e1 COLON E:e2 { return NewLetexp(getstr(x),rx(e1),rx(e2)) }
+E --> Var:x = E:e { return NewAssign(getstr(x),rx(e)) }
+E --> lambda Var:x . E:e { return NewLambda(getstr(x),rx(e)) }
+E --> if E:c E:a  else E:b { return NewIfelse(rx(c),rx(a),rx(b)) }
+E --> E:e ; ES:es { return NewSeq(rx(e),rx(es)) }
+ES -->  { return NewEOF() }
+ES --> E:e ; ES:es { return NewSeq(rx(e),rx(es)) }
+E --> Var:x { return NewVar(getstr(x)) }
 
 EOF
