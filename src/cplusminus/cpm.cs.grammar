@@ -25,8 +25,8 @@ resync ;
 
 STATLIST --> STAT 
 STATLIST --> STATLIST STAT 
-STAT --> cin >> EXPR { return Console.ReadLine(); }
-STAT --> cout << EXPRLIST:s { Console.WriteLine(": " + s); return ""; }
+STAT --> cin >> EXPR ; { return Console.ReadLine(); }
+STAT --> cout << EXPRLIST:s ; { Console.WriteLine(": " + s); return ""; }
 
 EXPR --> x { return "x"; }  
 EXPR --> y { return "y"; } 

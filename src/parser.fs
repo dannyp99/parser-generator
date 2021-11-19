@@ -6,7 +6,7 @@ open System.Text.RegularExpressions;;
 
 type expr = Val of int | Plus of (expr*expr) | Times of (expr*expr) | Subtract of (expr*expr) | Divide of (expr*expr) | Expt of (expr*expr) | Uminus of expr | Sym of String | EOF;;
 
-let rec eval = function 
+let rec eval = function  
   | Val(v) -> v
   | Plus(a,b) -> eval a + eval b
   | Times(a,b) -> eval a * eval b

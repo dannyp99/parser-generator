@@ -120,6 +120,7 @@ public class Grammar
         First = new Dictionary<string, HashSet<string>>();
         Rulesfor = new Dictionary<string, HashSet<int>>();
         AbsynType = null;
+        ReSync = "EOF";
     }
 
     public bool NonTerminal(string s)

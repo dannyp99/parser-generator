@@ -379,8 +379,10 @@ public class StateMachine
             simpleLexer SLexer = new simpleLexer(srcfile, "EOF");
             Parser<string> Par = Generator.make_parser();
             expr t = (expr)Par.Parse(SLexer);
-            run(t);
-            Console.WriteLine("Result: "+t); 
+            if(t != null) {
+                run(t);
+                Console.WriteLine("Result: "+t); 
+            }
         }
         else {
             Console.WriteLine("There is no given test file to parse. the Parser has been generated in ./writefsm");

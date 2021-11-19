@@ -38,7 +38,7 @@ public class Parser<Object>
     // line 1064 of Rust
     public object Parse(simpleLexer tokenizer)
     {
-        bool TRACE = true;
+        bool TRACE = false;
         absLexer abstractLex = new concreteLexer();
         object result = default(object);
         Stack<StackElement<object>> stack = new Stack<StackElement<object>>(8*1024);
@@ -66,10 +66,39 @@ public class Parser<Object>
         while(!stopparsing) {
             //Console.WriteLine(stack.Peek());
             int currentState = stack.Peek().Si;
+            var stackEl = stack.Peek();
             if(TRACE) {
                 Console.Write("State "+currentState+", lookahead ("+lookahead.token_type+"): ");            
             }
-            IStateAction actionopt = RSM[currentState][lookahead.token_type];
+            IStateAction actionopt;
+            RSM[currentState].TryGetValue(lookahead.token_type, out actionopt);
+            if(actionopt == null) { // Enter Resync Recovery Mode
+                Console.WriteLine("Unexpected token " + lookahead.token_value + " On line " + tokenizer.linenum());
+                while(lookahead.token_type != ReSyncSymbol && lookahead.token_type != "EOF") {
+                    nextoken = tokenizer.next(); 
+                    lookahead = abstractLex.translate_token(nextoken);
+                }
+
+                if(lookahead.token_type !="EOF"){
+                    nextoken = tokenizer.next();
+                    lookahead = abstractLex.translate_token(nextoken);
+                }
+                
+
+                while( actionopt == null && stack.Count > 0) {
+                    stackEl = stack.Pop();
+                    currentState = stackEl.Si;
+                    RSM[currentState].TryGetValue(lookahead.token_type, out actionopt);
+                }
+                
+                if(actionopt == null) {
+                    Console.WriteLine("Parsing Failed");
+                    return null;
+                }
+
+                stack.Push(stackEl);
+            } // End Error Handling
+
             action = actionopt;
             if(action is Shift) { // being "match"
                 if(TRACE) {
