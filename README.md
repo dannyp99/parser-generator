@@ -1,9 +1,15 @@
 # Parser Generator
 
-Build and Run all with one make
+Build the FSM first if it doesn't exist or needs to be regenerated.
 
 ```bash
-make < ./path_to_file.grammar
+make fsm < ./path_to_file.grammar
+```
+
+Run the parser with a simple `make`
+
+```bash
+make
 ```
 
 If the `.exe` file is not automatically deleted, please do so to enforce make to recompile.
@@ -19,7 +25,7 @@ Build and Debug all with one make
 First run the debugger and then run the following command
 
 ```bash
-make debug < ./path_to_file.grammar
+make debug
 ```
 
 If the `.exe` file is not automatically deleted, please do so to enforce make to recompile.

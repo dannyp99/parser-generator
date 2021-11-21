@@ -262,7 +262,7 @@ public class StateMachine
 
     public void writefsm(string filename)
     {
-        bool TRACE = true;
+        bool TRACE = false;
         
         using (StreamWriter sw = new StreamWriter(filename)) {
             sw.Write("using System;\n");
@@ -345,36 +345,38 @@ public class StateMachine
     
         //bool TRACE = false;
     public static void Main(string[] argv) {
-        Grammar g = new Grammar();
-        if (argv.Length > 0) {
+        if (argv.Length == 0) {
+            Grammar g = new Grammar();
             g.TRACE = false;
+            g.ParseStdin();
+            
+            if (g.TRACE) {Console.Write("\n");}
+            // Console.WriteLine("info:");
+            // Console.WriteLine("topsym: " + g.TopSym);
+            // foreach (var rule in g.Rules) {
+            //     rule.PrintRule();
+            // }
+            
+            g.ComputeFirst();
+            //g.PrintFirst();
+            //g.PrintNullable();
+            // Console.WriteLine("GrammarSym:" + g.Rules[0].Rhs[0]);
+            
+            var itemSet = new HashSet<Gitem>(256);  //(new GitemComparer());
+            g.StateClosure(itemSet);
+            StateMachine sm = new StateMachine(g);
+            Console.WriteLine("Gonna generate");
+            sm.generatefsm();
+            Console.WriteLine("Done Generating");
+            
+            //for(int i=0;i<sm.States.Count;i++)
+            //{sm.prettyPrintFSM(sm.States[i], g);  Console.WriteLine("---State "+i+" above-------"); }
+            string testpath = "./par.cs";
+            sm.writefsm(testpath);
+            Console.WriteLine("FSM written to " + testpath);
         }
-        g.ParseStdin();
-        
-        if (g.TRACE) {Console.Write("\n");}
-        // Console.WriteLine("info:");
-        // Console.WriteLine("topsym: " + g.TopSym);
-        // foreach (var rule in g.Rules) {
-        //     rule.PrintRule();
-        // }
-        
-        g.ComputeFirst();
-        //g.PrintFirst();
-        //g.PrintNullable();
-        // Console.WriteLine("GrammarSym:" + g.Rules[0].Rhs[0]);
-        
-        var itemSet = new HashSet<Gitem>(256);  //(new GitemComparer());
-        g.StateClosure(itemSet);
-        StateMachine sm = new StateMachine(g);
-        Console.WriteLine("Gonna generate");
-        sm.generatefsm();
-        Console.WriteLine("Done Generating");
-        
-        //for(int i=0;i<sm.States.Count;i++)
-          //{sm.prettyPrintFSM(sm.States[i], g);  Console.WriteLine("---State "+i+" above-------"); }
-        string testpath = "./writefsmTests/par.cs";
-        sm.writefsm(testpath); 
-        if(argv.Length == 0) {     
+        else if(argv.Length > 0) {
+            Console.WriteLine("change");
             const string srcfile = "./cplusminus/cmpError.txt";
             simpleLexer SLexer = new simpleLexer(srcfile, "EOF");
             Parser<string> Par = Generator.make_parser();
@@ -383,9 +385,6 @@ public class StateMachine
                 run(t);
                 Console.WriteLine("Result: "+t); 
             }
-        }
-        else {
-            Console.WriteLine("There is no given test file to parse. the Parser has been generated in ./writefsm");
         }
     }//main
 }
