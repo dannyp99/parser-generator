@@ -170,6 +170,7 @@ public class Grammar
         while (!atEOF)
         {
             line = Console.ReadLine();
+            Console.WriteLine(line);
             Linenum += 1;
 
             if (line == null)

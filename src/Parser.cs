@@ -34,11 +34,10 @@ public class Parser<Object>
         }
     }
 
-    //TODO parse
-    // line 1064 of Rust
     public object Parse(simpleLexer tokenizer)
     {
-        bool TRACE = false;
+        bool TRACE = true;
+        Console.WriteLine("PaRsE?");
         absLexer abstractLex = new concreteLexer();
         object result = default(object);
         Stack<StackElement<object>> stack = new Stack<StackElement<object>>(8*1024);
@@ -71,6 +70,7 @@ public class Parser<Object>
                 Console.Write("State "+currentState+", lookahead ("+lookahead.token_type+"): ");            
             }
             IStateAction actionopt;
+            if(TRACE){ Console.WriteLine("Retrieving actionopt");}
             RSM[currentState].TryGetValue(lookahead.token_type, out actionopt);
             if(actionopt == null) { // Enter Resync Recovery Mode
                 Console.WriteLine("Unexpected token " + lookahead.token_value + " On line " + tokenizer.linenum());
@@ -98,7 +98,7 @@ public class Parser<Object>
 
                 stack.Push(stackEl);
             } // End Error Handling
-
+            Console.WriteLine("Sematic Action is " + actionopt);
             action = actionopt;
             if(action is Shift) { // being "match"
                 if(TRACE) {
@@ -117,9 +117,13 @@ public class Parser<Object>
                 }// if not at EOF
             }
             else if(action is Reduce) {
+                
                 RGrule rulei = Rules[action.Next];
+                if(TRACE) { Console.WriteLine("Got rulei"); Console.WriteLine(rulei.Lhs);}
                 object val = rulei.RuleAction(stack);
+                if(TRACE) { Console.WriteLine("Got val");}
                 int newtop = stack.Peek().Si; 
+                if(TRACE) { Console.WriteLine("Got newtop");}
 
                 if(TRACE) {
                     Console.Write("Reduce by rule "+action.Next+",  ");

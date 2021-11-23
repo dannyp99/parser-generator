@@ -263,7 +263,6 @@ public class StateMachine
     public void writefsm(string filename)
     {
         bool TRACE = true;
-        
         using (StreamWriter sw = new StreamWriter(filename)) {
             sw.Write("using System;\n");
             sw.Write("using System.Collections;\n");
@@ -284,7 +283,7 @@ public class StateMachine
                     Console.WriteLine(Grammar.Rules.Count);
                 }
                 sw.Write("rule = new RGrule(\"{0}\");\n",Grammar.Rules[i].Lhs.Sym);
-                sw.Write("rule.RuleAction = (pstack) => { ");
+                sw.Write("rule.RuleAction = (pstack) => { Console.WriteLine("+i+");");
                 int k = Grammar.Rules[i].Rhs.Count;
                 while(k>0) {
                     GrammarSym gsym = Grammar.Rules[i].Rhs[k-1];
@@ -342,47 +341,65 @@ public class StateMachine
 
         } // Using StreamWriter  
     }//writefsm
-    
-        //bool TRACE = false;
+    //bool TRACE = false;
     public static void Main(string[] argv) {
-        Grammar g = new Grammar();
-        if (argv.Length > 0) {
-            g.TRACE = false;
-        }
-        g.ParseStdin();
-        
-        if (g.TRACE) {Console.Write("\n");}
-        // Console.WriteLine("info:");
-        // Console.WriteLine("topsym: " + g.TopSym);
-        // foreach (var rule in g.Rules) {
-        //     rule.PrintRule();
-        // }
-        
-        g.ComputeFirst();
-        //g.PrintFirst();
-        //g.PrintNullable();
-        // Console.WriteLine("GrammarSym:" + g.Rules[0].Rhs[0]);
-        
-        var itemSet = new HashSet<Gitem>(256);  //(new GitemComparer());
-        g.StateClosure(itemSet);
-        StateMachine sm = new StateMachine(g);
-        Console.WriteLine("Gonna generate");
-        sm.generatefsm();
-        Console.WriteLine("Done Generating");
-        
-        //for(int i=0;i<sm.States.Count;i++)
-          //{sm.prettyPrintFSM(sm.States[i], g);  Console.WriteLine("---State "+i+" above-------"); }
-        string testpath = "./writefsmTests/par.cs";
-        sm.writefsm(testpath); 
-        if(argv.Length == 0) {     
-            const string srcfile = "./cplusminus/cmpError.txt";
-            simpleLexer SLexer = new simpleLexer(srcfile, "EOF");
-            Parser<string> Par = Generator.make_parser();
-            expr t = (expr)Par.Parse(SLexer);
-            if(t != null) {
-                run(t);
-                Console.WriteLine("Result: "+t); 
+        bool TRACE = true;
+        Console.WriteLine(Console.KeyAvailable);
+        Console.WriteLine("Starting...");
+        int piped = -1;
+        Console.WriteLine(piped);
+        Console.WriteLine("-----");
+        if(piped > -1){
+            Console.WriteLine("Console.ReadLine() != null");
+            Grammar g = new Grammar();
+            if (argv.Length > 0) {
+                g.TRACE = false;
             }
+            g.ParseStdin();
+            
+            if (g.TRACE) {Console.Write("\n");}
+            // Console.WriteLine("info:");
+            // Console.WriteLine("topsym: " + g.TopSym);
+            // foreach (var rule in g.Rules) {
+            //     rule.PrintRule();
+            // }
+            
+            g.ComputeFirst();
+            //g.PrintFirst();
+            //g.PrintNullable();
+            // Console.WriteLine("GrammarSym:" + g.Rules[0].Rhs[0]);
+            
+            var itemSet = new HashSet<Gitem>(256);  //(new GitemComparer());
+            g.StateClosure(itemSet);
+            StateMachine sm = new StateMachine(g);
+            Console.WriteLine("Gonna generate");
+            sm.generatefsm();
+            Console.WriteLine("Done Generating");
+            
+            //for(int i=0;i<sm.States.Count;i++)
+            //{sm.prettyPrintFSM(sm.States[i], g);  Console.WriteLine("---State "+i+" above-------"); }
+            string testpath = "./writefsmTests/par.cs";
+            sm.writefsm(testpath); 
+        }
+        Console.WriteLine("Argv length = " + argv.Length);
+        if(argv.Length == 1) {     
+            string srcfile = "./" + argv[0];
+            simpleLexer SLexer = new simpleLexer(srcfile, "EOF");
+            if(TRACE) { Console.WriteLine("SLexer is null? " + SLexer == null);}
+            Parser<object> Par = Generator.make_parser(); 
+            if(TRACE) { Console.WriteLine("Parser Generated"); } 
+            if(Par != null) {
+                expr t = (expr)Par.Parse(SLexer);
+                if(t != null) {
+                    FSPrint(t);
+                    run(t);
+                    Console.WriteLine("Result: "+t); 
+                }
+            }
+            else {
+                Console.WriteLine("Error in Parser Generation. Parser Generator is null");
+            }
+            
         }
         else {
             Console.WriteLine("There is no given test file to parse. the Parser has been generated in ./writefsm");

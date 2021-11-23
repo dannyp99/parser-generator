@@ -41,35 +41,35 @@ left ! 194
 #left . 22
 
 # rx(e) - makes new reference counting pointer
-# Nothing - enum type. I think closest is EOF type
-E --> Val:n { return n }
-E --> ( E:e )  { return e }
-E --> ( Var:f E:x ) { return NewApp(getstr(f),x) }
-E --> cin { return NewUniop(2, EOF) }
-E --> cout Str:s { return NewUniop(3,s) } 
-E --> cout E:e { return NewUniop(3,e) }
-E --> E:a + E:b { return NewBinop(0,a,b) }
-E --> E:a - E:b { return NewBinop(1,a,b) }
-E --> E:a * E:b { return NewBinop(2,a,b) }
-E --> E:a / E:b { return NewBinop(3,a,b) }
-E --> E:a % E:b { return NewBinop(4,a,b) }
-E --> E:a ^ E:b { return NewBinop(5,a,b) }
-#E --> E:a = E:b { return NewBinop(6,a,b) }
-E --> E:a == E:b { return NewBinop(7,a,b) }
-E --> E:a < E:b { return NewBinop(8,a,b) }
-E --> E:a <= E:b { return NewBinop(9,a,b) }
-E --> while ( E:a ) E:b { return NewBinop(10,a,b) }
-E --> E:a && E:b { return NewBinop(11,a,b) }
-E --> E:a || E:b { return NewBinop(12,a,b) }
-E --> - E:e { return NewUniop(0,e) }
-E --> ! E:e { return NewUniop(1,e) }
-E --> let Var:x = E:e1 COLON E:e2 { return NewLetexp(GetStr(x),e1,e2) }
-E --> Var:x = E:e { return NewAssign(GetStr(x),e) }
-E --> lambda Var:x . E:e { return NewLambda(getstr(x),e) }
-E --> if E:c E:a  else E:b { return NewIfelse(rx(c),a,b) }
-E --> E:e ; ES:es { return NewSeq(e,es) }
-ES -->  { return NewEOF() }
-ES --> E:e ; ES:es { return NewSeq(e,es) }
-E --> Var:x { return NewVar(GetStr(x)) }
+# Nothing - enum type. I think closest is expr.EOF type
+E --> Val:n { return n; }
+E --> ( E:e )  { return e; }
+E --> ( Var:f E:x ) { return NewApp(f,x); }
+E --> cin { return NewUniop("CIN",expr.EOF); }
+E --> cout Str:s { return NewUniop("COUT",NewSym(s)); } 
+E --> cout E:e { return NewUniop("COUT",e); }
+E --> E:a + E:b { return NewBinop("+",a,b); }
+E --> E:a - E:b { return NewBinop("-",a,b); }
+E --> E:a * E:b { return NewBinop("*",a,b); }
+E --> E:a / E:b { return NewBinop("/",a,b); }
+E --> E:a % E:b { return NewBinop("%",a,b); }
+E --> E:a ^ E:b { return NewBinop("^",a,b); }
+#E --> E:a = E:b { return NewBinop("=",a,b); }
+E --> E:a == E:b { return NewBinop("==",a,b); }
+E --> E:a < E:b { return NewBinop("<",a,b); }
+E --> E:a <= E:b { return NewBinop("<=",a,b); }
+E --> while ( E:a ) E:b { return NewBinop("while",a,b); }
+E --> E:a && E:b { return NewBinop("&&",a,b); }
+E --> E:a || E:b { return NewBinop("||",a,b); }
+E --> - E:e { return NewUniop("-",e); }
+E --> ! E:e { return NewUniop("!",e); }
+E --> let Var:x = E:e1 COLON E:e2 { return NewLetexp(x,e1,e2); }
+E --> Var:x = E:e { return NewAssign(x,e); }
+E --> lambda Var:x . E:e { return NewLambda(x,e); }
+E --> if E:c E:a  else E:b { return NewIfelse(c,a,b); }
+E --> E:e ; ES:es { return NewSeq(e,es); }
+ES -->  { return expr.EOF; }
+ES --> E:e ; ES:es { return NewSeq(e,es); }
+E --> Var:x { return NewVar(x); }
 
 EOF
