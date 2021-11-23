@@ -36,8 +36,7 @@ public class Parser<Object>
 
     public object Parse(simpleLexer tokenizer)
     {
-        bool TRACE = true;
-        Console.WriteLine("PaRsE?");
+        bool TRACE = false;
         absLexer abstractLex = new concreteLexer();
         object result = default(object);
         Stack<StackElement<object>> stack = new Stack<StackElement<object>>(8*1024);
@@ -98,7 +97,9 @@ public class Parser<Object>
 
                 stack.Push(stackEl);
             } // End Error Handling
-            Console.WriteLine("Sematic Action is " + actionopt);
+            if (TRACE) {
+                Console.WriteLine("Sematic Action is " + actionopt);
+            }
             action = actionopt;
             if(action is Shift) { // being "match"
                 if(TRACE) {

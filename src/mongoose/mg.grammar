@@ -5,7 +5,7 @@ nonterminal ES expr
 terminal + - * / % ^ ( ) COLON = < <= == . ; && || ! 
 terminal if else while let cin cout lambda
 typedterminal Var string
-typedterminal Val int
+typedterminal Val expr
 typedterminal Str string
 topsym E
 

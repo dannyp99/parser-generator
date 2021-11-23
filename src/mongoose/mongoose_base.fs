@@ -109,127 +109,127 @@ eval <- fun (env:environ) exp ->
 ////////////////////////////////////////////////////
 // I do not think you can call certain variables depending on mutable/rec. Need
 // to make an "entry" function
-let mutable printTree = fun result (parseTree:expr) -> "";;
-printTree <- fun result (parseTree:expr) ->
-  match parseTree with
-    | Val(x) -> 
-        result = result + "Val("+string(x)+")"; 
-        //endString <- endString + "Val(" + string(x) + ")"
-    | Binop(a,b,c) -> 
-        result = result + "Binop(" + string(a) + "," + (printTree b) + "," + (printTree c) + ")"; 
-        //endString <- endString + string(a) + "("+ (printTree b) +","+ (printTree c) +")"
-    | Ifelse(a,b,c) -> 
-        result = result + "if(" + string(a) + "," + (printTree b) + "," + (printTree c) + ")"; 
-        result
-        //endString <- endString + string(a) + "(" + (printTree b) +","+ (printTree c) + ")"
-    | _ ->  
-        result = "Unrecognized expression"; 
-        result;
-  endString;;
+// let mutable printTree = fun result (parseTree:expr) -> "";;
+// printTree <- fun result (parseTree:expr) ->
+//   match parseTree with
+//     | Val(x) -> 
+//         result = result + "Val("+string(x)+")"; 
+//         //endString <- endString + "Val(" + string(x) + ")"
+//     | Binop(a,b,c) -> 
+//         result = result + "Binop(" + string(a) + "," + (printTree b) + "," + (printTree c) + ")"; 
+//         //endString <- endString + string(a) + "("+ (printTree b) +","+ (printTree c) +")"
+//     | Ifelse(a,b,c) -> 
+//         result = result + "if(" + string(a) + "," + (printTree b) + "," + (printTree c) + ")"; 
+//         result
+//         //endString <- endString + string(a) + "(" + (printTree b) +","+ (printTree c) + ")"
+//     | _ ->  
+//         result = "Unrecognized expression"; 
+//         result;
+//   endString;;
 
 
-let FSPrint(e:expr) = 
-  Console.WriteLine("Parse Tree:")
-  Console.WriteLine((printTree "" e)
+// let FSPrint(e:expr) = 
+//   Console.WriteLine("Parse Tree:")
+//   Console.WriteLine((printTree "" e)
 let run(e:expr) = 
   printfn "%A" (eval [] e);
 
 
 ////////////////       LEXICAL ANALYZER (LEXER, TOKENIZER)
 //// must adopt basic lexer written in C# (in simpleLexer.dll)
-let mutable TS =[];; // global list of tokens
-let mutable TI = 0;; // global index for TS stream;;
-let mutable input_string = "";; // default input string, GLOBAL!
+// let mutable TS =[];; // global list of tokens
+// let mutable TI = 0;; // global index for TS stream;;
+// let mutable input_string = "";; // default input string, GLOBAL!
 
-// function to convert C# lexToken structures to F# type expr
-let convert_token (token:lexToken) =
-  match token.token_type with
-   | "Integer" -> Val(token.token_value :?> int) // :?> downcasts from obj
-   |  "Symbol" | "Keyword" -> Sym(token.token_value :?> string)
-   |  "StringLiteral" ->
-      let s = token.token_value :?> string
-      Sym(s.Substring(1,s.Length-2))
-   |  "Alphanumeric" -> Var(token.token_value :?> string)
-   | _ -> EOF;;
-// all alphanumerics that are not keywords become Variables   
-
-
-///// The following function takes an input string and sets global
-// variable TS, which is a stream of tokens (see commented example above
-// for (7+3*2)).  It also sets TI, which is a global index into TS.
-let mutable lexer = fun (inp:string) ->  // main lexical analysis function
-  let scanner = simpleLexer(inp);  // create .net object
-  for kw in ["if";"else";"while";"let";"lambda";"cin";"cout"] do
-     scanner.addKeyword(kw)
-  let rec tokenize ax =
-     let token = scanner.next()
-     if token=null then ax else tokenize (convert_token(token)::ax);
-  let rec reverse stack = function  // shorthand for match arg with ...
-    | [] -> stack
-    | a::b -> reverse (a::stack) b;
-  let tokens = reverse [EOF] (tokenize [])
-  TS <- tokens  // assign to globar for convenience
-  TI <- 0;;  // reset if needed
-//  printfn "\ntoken stream: %A\n" TS;;
+// // function to convert C# lexToken structures to F# type expr
+// let convert_token (token:lexToken) =
+//   match token.token_type with
+//    | "Integer" -> Val(token.token_value :?> int) // :?> downcasts from obj
+//    |  "Symbol" | "Keyword" -> Sym(token.token_value :?> string)
+//    |  "StringLiteral" ->
+//       let s = token.token_value :?> string
+//       Sym(s.Substring(1,s.Length-2))
+//    |  "Alphanumeric" -> Var(token.token_value :?> string)
+//    | _ -> EOF;;
+// // all alphanumerics that are not keywords become Variables   
 
 
-
-///////////////////////////
-////////////////////////// SHIFT-REDUCE PARSER ////////////////////////
-let mutable binops=    ["+";"*";"/";"-";"%";"==";"^";"<";"<=";"while";"&&";"||";"assign"];
-let mutable unaryops=["-"; "!"; "~";"cin";"cout"];
-
-// use hash table (Dictionary) to associate each operator with precedence
-let prectable = Dictionary<string,int>();;
-prectable.["+"] <- 200;
-prectable.["-"] <- 300;
-prectable.["*"] <- 400;
-prectable.["/"] <- 500;
-prectable.["%"] <- 500;
-prectable.["^"] <- 550;
-prectable.["!"] <- 550;
-prectable.["&&"] <- 540;
-prectable.["||"] <- 530;
-prectable.["("] <- 990;
-prectable.[")"] <- 20;
-prectable.[":"] <- 42;   // trial by error... got to be careful
-prectable.["="] <- 30;
-prectable.["."] <- 20;
-prectable.["_"] <- 600;  // fictional symbol for function app
-prectable.["=="] <- 35;
-prectable.["<="] <- 35;
-prectable.["<"] <- 35;
-prectable.["if"] <- 20;
-prectable.["let"] <- 42;
-prectable.["while"] <- 40
-prectable.["else"] <- 18; //20
-prectable.["cin"] <- 100 //  same as Val
-prectable.["cout"] <- 22;
-prectable.[";"] <- 20;
-prectable.["begin"] <- 20;
-prectable.["end"] <- 20;
-
-let mutable proper = fun f ->
-  match f with
-    | Sym(_) -> false
-    | EOF -> false
-    | _ -> true;; // everything else is considered a proper expression
-// check if a list of expressions are all proper
-let rec all_proper n =
-  match n with
-    | [] -> true
-    | (car::cdr) -> proper(car) && all_proper(cdr);;
-// note : short-circuited boolean makes this tail-recursive.
+// ///// The following function takes an input string and sets global
+// // variable TS, which is a stream of tokens (see commented example above
+// // for (7+3*2)).  It also sets TI, which is a global index into TS.
+// let mutable lexer = fun (inp:string) ->  // main lexical analysis function
+//   let scanner = simpleLexer(inp);  // create .net object
+//   for kw in ["if";"else";"while";"let";"lambda";"cin";"cout"] do
+//      scanner.addKeyword(kw)
+//   let rec tokenize ax =
+//      let token = scanner.next()
+//      if token=null then ax else tokenize (convert_token(token)::ax);
+//   let rec reverse stack = function  // shorthand for match arg with ...
+//     | [] -> stack
+//     | a::b -> reverse (a::stack) b;
+//   let tokens = reverse [EOF] (tokenize [])
+//   TS <- tokens  // assign to globar for convenience
+//   TI <- 0;;  // reset if needed
+// //  printfn "\ntoken stream: %A\n" TS;;
 
 
-// function defines precedence of symbol, which includes more than just Syms
-let mutable precedence = fun s ->
-  match s with
-   | Val(_) -> 100
-   | Var(_) -> 100
-   | Sym(s) when prectable.ContainsKey(s) -> prectable.[s]
-   | EOF    -> 10
-   | _ -> 11;;
+
+// ///////////////////////////
+// ////////////////////////// SHIFT-REDUCE PARSER ////////////////////////
+// let mutable binops=    ["+";"*";"/";"-";"%";"==";"^";"<";"<=";"while";"&&";"||";"assign"];
+// let mutable unaryops=["-"; "!"; "~";"cin";"cout"];
+
+// // use hash table (Dictionary) to associate each operator with precedence
+// let prectable = Dictionary<string,int>();;
+// prectable.["+"] <- 200;
+// prectable.["-"] <- 300;
+// prectable.["*"] <- 400;
+// prectable.["/"] <- 500;
+// prectable.["%"] <- 500;
+// prectable.["^"] <- 550;
+// prectable.["!"] <- 550;
+// prectable.["&&"] <- 540;
+// prectable.["||"] <- 530;
+// prectable.["("] <- 990;
+// prectable.[")"] <- 20;
+// prectable.[":"] <- 42;   // trial by error... got to be careful
+// prectable.["="] <- 30;
+// prectable.["."] <- 20;
+// prectable.["_"] <- 600;  // fictional symbol for function app
+// prectable.["=="] <- 35;
+// prectable.["<="] <- 35;
+// prectable.["<"] <- 35;
+// prectable.["if"] <- 20;
+// prectable.["let"] <- 42;
+// prectable.["while"] <- 40
+// prectable.["else"] <- 18; //20
+// prectable.["cin"] <- 100 //  same as Val
+// prectable.["cout"] <- 22;
+// prectable.[";"] <- 20;
+// prectable.["begin"] <- 20;
+// prectable.["end"] <- 20;
+
+// let mutable proper = fun f ->
+//   match f with
+//     | Sym(_) -> false
+//     | EOF -> false
+//     | _ -> true;; // everything else is considered a proper expression
+// // check if a list of expressions are all proper
+// let rec all_proper n =
+//   match n with
+//     | [] -> true
+//     | (car::cdr) -> proper(car) && all_proper(cdr);;
+// // note : short-circuited boolean makes this tail-recursive.
+
+
+// // function defines precedence of symbol, which includes more than just Syms
+// let mutable precedence = fun s ->
+//   match s with
+//    | Val(_) -> 100
+//    | Var(_) -> 100
+//    | Sym(s) when prectable.ContainsKey(s) -> prectable.[s]
+//    | EOF    -> 10
+//    | _ -> 11;;
 
 
 

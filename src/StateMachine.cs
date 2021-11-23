@@ -262,7 +262,8 @@ public class StateMachine
 
     public void writefsm(string filename)
     {
-        bool TRACE = true;
+        bool TRACE = false;
+        
         using (StreamWriter sw = new StreamWriter(filename)) {
             sw.Write("using System;\n");
             sw.Write("using System.Collections;\n");
@@ -343,18 +344,10 @@ public class StateMachine
     }//writefsm
     //bool TRACE = false;
     public static void Main(string[] argv) {
-        bool TRACE = true;
-        Console.WriteLine(Console.KeyAvailable);
-        Console.WriteLine("Starting...");
-        int piped = -1;
-        Console.WriteLine(piped);
-        Console.WriteLine("-----");
-        if(piped > -1){
-            Console.WriteLine("Console.ReadLine() != null");
+        const bool TRACE = false;
+        if (argv.Length == 0) {
             Grammar g = new Grammar();
-            if (argv.Length > 0) {
-                g.TRACE = false;
-            }
+            g.TRACE = false;
             g.ParseStdin();
             
             if (g.TRACE) {Console.Write("\n");}
@@ -378,20 +371,20 @@ public class StateMachine
             
             //for(int i=0;i<sm.States.Count;i++)
             //{sm.prettyPrintFSM(sm.States[i], g);  Console.WriteLine("---State "+i+" above-------"); }
-            string testpath = "./writefsmTests/par.cs";
-            sm.writefsm(testpath); 
+            string testpath = "./par.cs";
+            sm.writefsm(testpath);
+            Console.WriteLine("FSM written to " + testpath);
         }
-        Console.WriteLine("Argv length = " + argv.Length);
-        if(argv.Length == 1) {     
-            string srcfile = "./" + argv[0];
+        else if(argv.Length > 0) {
+            const string srcfile = "./mongoose/test1.ms";
             simpleLexer SLexer = new simpleLexer(srcfile, "EOF");
-            if(TRACE) { Console.WriteLine("SLexer is null? " + SLexer == null);}
+            //if(TRACE) { Console.WriteLine("SLexer is null? " + SLexer == null);}
             Parser<object> Par = Generator.make_parser(); 
-            if(TRACE) { Console.WriteLine("Parser Generated"); } 
+            //if(TRACE) { Console.WriteLine("Parser Generated"); } 
             if(Par != null) {
                 expr t = (expr)Par.Parse(SLexer);
                 if(t != null) {
-                    FSPrint(t);
+                    //FSPrint(t);
                     run(t);
                     Console.WriteLine("Result: "+t); 
                 }
@@ -400,9 +393,6 @@ public class StateMachine
                 Console.WriteLine("Error in Parser Generation. Parser Generator is null");
             }
             
-        }
-        else {
-            Console.WriteLine("There is no given test file to parse. the Parser has been generated in ./writefsm");
         }
     }//main
 }
