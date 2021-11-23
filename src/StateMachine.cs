@@ -379,7 +379,7 @@ public class StateMachine
             const string srcfile = "./mongoose/test1.ms";
             simpleLexer SLexer = new simpleLexer(srcfile, "EOF");
             //if(TRACE) { Console.WriteLine("SLexer is null? " + SLexer == null);}
-            Parser<object> Par = Generator.make_parser(); 
+            var Par = Generator.make_parser(); 
             //if(TRACE) { Console.WriteLine("Parser Generated"); } 
             if(Par != null) {
                 expr t = (expr)Par.Parse(SLexer);

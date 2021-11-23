@@ -12,6 +12,8 @@ Run the parser with a simple `make`
 make
 ```
 
+**NOTE** You will have to change the `srcfile` variable in the `StateMachine.cs` to the text file you want to test.
+
 If the `.exe` file is not automatically deleted, please do so to enforce make to recompile.
 
 *Or* run `make clean` to enforce makefile to rebuild dlls and exe.
