@@ -20,7 +20,7 @@ If the `.exe` file is not automatically deleted, please do so to enforce make to
 
 In the case of running different grammars that need different values from the previous grammar you just need to modify the parser.dll target in the `makefile`.
 
-```make
+```makefile
 parser.dll: /path/to/fsharp/parser/file.fs
     fsharpc /path/to/fsharp/parser/file.fs -a -out:parser.dll
 ```
