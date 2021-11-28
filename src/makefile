@@ -2,7 +2,7 @@ LEX=./lexer
 MONGOOSE=./mongoose
 
 run: ParGen.exe
-	-mono ParGen.exe run
+	-mono ParGen.exe $(compfile)
 	@rm ParGen.exe # Quietly remove the executable
 .PHONY: run
 

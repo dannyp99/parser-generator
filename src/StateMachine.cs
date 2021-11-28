@@ -376,7 +376,7 @@ public class StateMachine
             Console.WriteLine("FSM written to " + testpath);
         }
         else if(argv.Length > 0) {
-            const string srcfile = "./mongoose/test1.ms";
+            string srcfile = argv[0];//"./mongoose/test1.ms";
             simpleLexer SLexer = new simpleLexer(srcfile, "EOF");
             //if(TRACE) { Console.WriteLine("SLexer is null? " + SLexer == null);}
             var Par = Generator.make_parser(); 
