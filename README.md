@@ -56,12 +56,14 @@ The only requirement here is that if needed you must write a `translate_token(le
 
 The `launch.json` is configured with the [ms-vscode.mono-debug](https://marketplace.visualstudio.com/items?itemName=ms-vscode.mono-debug) extension for VSCode please be sure to install the extension before attempting to debug.
 
+**NOTE:** The debugger is only set to debug the code after running the writefsm.
+
 Build and Debug all with one make
 
 First run the debugger and then run the following command
 
 ```bash
-make debug
+make debug compfile=./path_to_test_file.ms
 ```
 
 If the `.exe` file is not automatically deleted, please do so to enforce make to recompile.

@@ -12,7 +12,7 @@ fsm: ParGen.exe
 .PHONY: fsm
 
 debug: ParGen.exe
-	-mono --debug --debugger-agent=transport=dt_socket,server=y,address=127.0.0.1:55555 ParGen.exe run
+	-mono --debug --debugger-agent=transport=dt_socket,server=y,address=127.0.0.1:55555 ParGen.exe $(compfile)
 	@rm ParGen.exe # Quietly remove the executable
 .PHONY: debug
 
