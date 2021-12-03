@@ -31,7 +31,6 @@ public class concreteLexer : simpleLexer {
             }
             else{
                 t.token_type = "Var"; 
-                t.token_value = NewVar((string)t.token_value);
             }
         } 
         else if (t.token_type =="Keyword") { t.token_type = (string)t.token_value;}

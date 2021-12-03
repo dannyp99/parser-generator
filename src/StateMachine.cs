@@ -23,7 +23,7 @@ public class StateMachine
 
     public void makegotos(short si)
     {
-        bool TRACE = false;
+        bool TRACE = true;
         HashSet<Gitem> state = States[si];
         var newStates = new Dictionary<string, HashSet<Gitem>>(1024);
         foreach (Gitem item in state)
@@ -51,19 +51,25 @@ public class StateMachine
                     if (currentAction is Reduce && currentAction.Next < item.Ri)//simulated pattern matching
                     {   
                         change = false;
-                        Console.WriteLine("Reduce-Reduce conflict!");
+                        if(TRACE) {
+                          Console.WriteLine("Reduce-Reduce conflict!");
+                        }
                         //PrintState()
                     }
                     else if (currentAction is Reduce && currentAction.Next > item.Ri)
                     {
                         change = true;
-                        Console.WriteLine("Reduce-Reduce conflict!");
+                        if(TRACE){
+                          Console.WriteLine("Reduce-Reduce conflict!");
+                        } 
                         //PrintState()
                     }
                     else if (currentAction is Accept)
                     {
                         change = false;
-                        Console.WriteLine("Accept");
+                        if(TRACE){
+                          Console.WriteLine("Accept");
+                        }
                     }
                     // MAKE SURE SHIFT-REDUCE CONFLICTS ARE RESOLVED
                     else if (currentAction is Shift)
@@ -72,6 +78,10 @@ public class StateMachine
                         var symRiPrec = Grammar.Symbols[item.La].Precedence;
                         if (ruleRiPrec == symRiPrec && ruleRiPrec < 0) {change = false;}// right associative
                         else if (Math.Abs(symRiPrec) > Math.Abs(ruleRiPrec)) {change = false;}// still shift
+                        if(TRACE) {
+                          Console.WriteLine("Shift/Reduce Conflict");
+                          Console.WriteLine("Rule Precedence: " + ruleRiPrec + " -- Symbol Precedence: " + symRiPrec );
+                        }
                     }
                     else {
                         Console.WriteLine("Pattern Match Nothing");
@@ -180,7 +190,18 @@ public class StateMachine
             actionstr = "GotoState("+toAdd+")";            
         }
         if (FSM[psi].ContainsKey(nextSym)) {
+          IStateAction curAction = FSM[psi][nextSym];
+          if( curAction is Reduce) {
+            var ri = curAction.Next;
+            var ruleRiPrec = Grammar.Rules[ri].Precedence;
+            var symRiPrec = Grammar.Symbols[nextSym].Precedence;
+            if ((ruleRiPrec == symRiPrec && ruleRiPrec <0 )  || (Math.Abs(symRiPrec) > Math.Abs(ruleRiPrec))) {
+              FSM[psi][nextSym] = newAction;
+            }
+          } 
+          else {
             FSM[psi][nextSym] =  newAction;
+          }
         }
         else {
             // Check Reduce

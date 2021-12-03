@@ -232,16 +232,6 @@ public class Grammar
                         TopSym = toks[1];
                         break;
                     case "left":
-                        int preclevel;
-                        if(!int.TryParse(toks[2],out preclevel)) { preclevel = 20; }
-                        if(toks[0] == "right") { preclevel = -1 * preclevel; }
-
-                        GrammarSym gsym;
-                        if(Symbols.TryGetValue(toks[1], out gsym)) { 
-                            gsym.Precedence = preclevel; 
-                        } 
-                        if (TRACE) {Console.WriteLine("left/right {0} {1}",toks[1],preclevel);}
-                        break;
                     case "right":
                         int preclevel;
                         if(!int.TryParse(toks[2],out preclevel)) { preclevel = 20; }
@@ -289,7 +279,7 @@ public class Grammar
                                     }
                                     newSym.Label = tokLab[1];
                                 }
-                                if(newSym.Precedence > maxprec){
+                                if(Math.Abs(newSym.Precedence) > Math.Abs(maxprec)){
                                   maxprec = newSym.Precedence;
                                 }
                                 rhsSyms.Add(newSym);

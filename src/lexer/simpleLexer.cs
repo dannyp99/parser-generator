@@ -40,7 +40,7 @@ using System.Collections.Generic;
 public class simpleLexer : absLexer
 {
   public static string operators_re =
-    "([()\\+\\-\\*/:;%^<>!,]|\\s|\\[|\\]|{|}|=|\"[^\"]*\")";
+    "([()\\+\\-\\*/:;%^<>!,.]|\\s|\\[|\\]|{|}|=|\"[^\"]*\")";
 
   public string endofline = null; //"ENDL";
   // optional endofline marker

@@ -94,7 +94,7 @@ public class Parser<Object>
             if(TRACE){ Console.WriteLine("Retrieving actionopt");}
             RSM[currentState].TryGetValue(lookahead.token_type, out actionopt);
             if(actionopt == null) { // Enter Resync Recovery Mode
-                Console.WriteLine("Unexpected token " + lookahead.token_type + " On line " + tokenizer.linenum());
+                Console.WriteLine("Unexpected token type" + lookahead.token_type + " with value " + lookahead.token_value + "\nOn line " + tokenizer.linenum() + "\nCurrent State: " + currentState  );
                 while(lookahead.token_type != ReSyncSymbol && lookahead.token_type != "EOF") {
                     nextoken = tokenizer.next(); 
                     lookahead = abstractLex.translate_token(nextoken);
@@ -134,12 +134,13 @@ public class Parser<Object>
                 stack.Push(new StackElement<object>(action.Next,lookahead.token_value));
                 if (lookahead.token_type!="EOF") {
                   nextoken = tokenizer.next();
-
+                  Console.WriteLine("Token before translation " + nextoken.token_type);
                   if(TRACE) {
                     Console.WriteLine("***next token: "+nextoken);
                   }
                   if (nextoken!=null)
                     lookahead = abstractLex.translate_token(nextoken);
+                    Console.WriteLine("Token after translation " + lookahead.token_type);
                     if(TRACE) {
                         Console.WriteLine("*** translated nextoken: " + lookahead);
                     }
