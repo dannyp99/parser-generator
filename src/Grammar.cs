@@ -71,7 +71,7 @@ public class GrammarRule {
 
     public GrammarRule(){ } 
     // same as laing's new_skeleton
-    public GrammarRule(string lh){
+    public GrammarRule(string lh){ // Precedence never 
         Lhs = new GrammarSym(lh,false);
         Rhs = new List<GrammarSym>();
         Action = "";
@@ -232,6 +232,16 @@ public class Grammar
                         TopSym = toks[1];
                         break;
                     case "left":
+                        int preclevel;
+                        if(!int.TryParse(toks[2],out preclevel)) { preclevel = 20; }
+                        if(toks[0] == "right") { preclevel = -1 * preclevel; }
+
+                        GrammarSym gsym;
+                        if(Symbols.TryGetValue(toks[1], out gsym)) { 
+                            gsym.Precedence = preclevel; 
+                        } 
+                        if (TRACE) {Console.WriteLine("left/right {0} {1}",toks[1],preclevel);}
+                        break;
                     case "right":
                         int preclevel;
                         if(!int.TryParse(toks[2],out preclevel)) { preclevel = 20; }
@@ -242,7 +252,6 @@ public class Grammar
                             gsym.Precedence = preclevel; 
                         }
                         
-
                         if (TRACE) {Console.WriteLine("left/right {0} {1}",toks[1],preclevel);}
                         break;
                     case "resync":
@@ -259,6 +268,7 @@ public class Grammar
                             }
                             GrammarSym lhsSym = Symbols[toks[0]];
                             List<GrammarSym> rhsSyms = new List<GrammarSym>();
+                            int maxprec = 0;
                             string semAction = "}";
                             for(int i = 2; i< toks.Count; i++) {
                                 if (TRACE) {Console.WriteLine("  " + toks[i]);}
@@ -279,6 +289,9 @@ public class Grammar
                                     }
                                     newSym.Label = tokLab[1];
                                 }
+                                if(newSym.Precedence > maxprec){
+                                  maxprec = newSym.Precedence;
+                                }
                                 rhsSyms.Add(newSym);
                             }
 
@@ -286,7 +299,8 @@ public class Grammar
                                 Lhs = lhsSym,
                                 Rhs = rhsSyms,
                                 Operation = default(string),
-                                Action = semAction
+                                Action = semAction,
+                                Precedence = maxprec
                             };
                             Rules.Add(rule);
                         } else {

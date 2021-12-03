@@ -46,6 +46,7 @@ public class StateMachine
                 IStateAction currentAction;
                 FSM[si].TryGetValue(item.La, out currentAction);
                 var change = true;
+                // need to favor lower rule number
                 if(currentAction != null) {
                     if (currentAction is Reduce && currentAction.Next < item.Ri)//simulated pattern matching
                     {   
@@ -55,7 +56,7 @@ public class StateMachine
                     }
                     else if (currentAction is Reduce && currentAction.Next > item.Ri)
                     {
-                        change = false;
+                        change = true;
                         Console.WriteLine("Reduce-Reduce conflict!");
                         //PrintState()
                     }
@@ -64,6 +65,7 @@ public class StateMachine
                         change = false;
                         Console.WriteLine("Accept");
                     }
+                    // MAKE SURE SHIFT-REDUCE CONFLICTS ARE RESOLVED
                     else if (currentAction is Shift)
                     {
                         var ruleRiPrec = Grammar.Rules[item.Ri].Precedence;
@@ -89,7 +91,14 @@ public class StateMachine
                         }
                     }
                     else {
-                        FSM[si].Add(item.La, new Reduce(item.Ri));
+                        FSM[si].TryGetValue(item.La, out currentAction);
+                        if(currentAction == null){
+                          FSM[si].Add(item.La, new Reduce(item.Ri));
+                        }
+                        else{
+                          // Update rule message
+                          FSM[si][item.La] = new Reduce(item.Ri);
+                        }
                         //Console.WriteLine("***FSM["+si+"]["+item.La+"]=Reduce by "+item.Ri);                        
                     }
                 }// add IStateAction
@@ -174,6 +183,7 @@ public class StateMachine
             FSM[psi][nextSym] =  newAction;
         }
         else {
+            // Check Reduce
             FSM[psi].Add(nextSym, newAction);
         }
         if(TRACE){ 
@@ -344,12 +354,7 @@ public class StateMachine
     //bool TRACE = false;
     public static void Main(string[] argv) {
         bool TRACE = true;
-        Console.WriteLine(Console.KeyAvailable);
-        Console.WriteLine("Starting...");
-        int piped = -1;
-        Console.WriteLine(piped);
-        Console.WriteLine("-----");
-        if(piped > -1){
+        if(Console.IsInputRedirected){
             Console.WriteLine("Console.ReadLine() != null");
             Grammar g = new Grammar();
             if (argv.Length > 0) {
@@ -378,6 +383,7 @@ public class StateMachine
             
             //for(int i=0;i<sm.States.Count;i++)
             //{sm.prettyPrintFSM(sm.States[i], g);  Console.WriteLine("---State "+i+" above-------"); }
+
             string testpath = "./writefsmTests/par.cs";
             sm.writefsm(testpath); 
         }
@@ -385,14 +391,16 @@ public class StateMachine
         if(argv.Length == 1) {     
             string srcfile = "./" + argv[0];
             simpleLexer SLexer = new simpleLexer(srcfile, "EOF");
+            simpleLexer SLexerForRaw = new simpleLexer(srcfile, "EOF");
             if(TRACE) { Console.WriteLine("SLexer is null? " + SLexer == null);}
             Parser<object> Par = Generator.make_parser(); 
             if(TRACE) { Console.WriteLine("Parser Generated"); } 
+            Par.RawParse(SLexerForRaw);
             if(Par != null) {
                 expr t = (expr)Par.Parse(SLexer);
                 if(t != null) {
-                    FSPrint(t);
-                    run(t);
+                    //FSPrint(t);
+                    // run(t);
                     Console.WriteLine("Result: "+t); 
                 }
             }

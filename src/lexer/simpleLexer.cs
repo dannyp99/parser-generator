@@ -78,10 +78,17 @@ public class simpleLexer : absLexer
 
   public simpleLexer(string filename, string eof) // read from file
   {
+     bool TRACE = false;
      foreach (string kw in keywords) addKeyword(kw);
      foreach (string ms in multichar_syms) addMultichar(ms);  
-     endofline = eof;
+     //endofline = eof;
      var tempLines = new List<string>(System.IO.File.ReadAllLines(filename));
+     if(TRACE){
+        Console.WriteLine("Raw File Lines from simplexLexer:");
+        foreach(string s in tempLines){
+           Console.WriteLine(s);
+        }
+     }
      tempLines.Add("EOF");
      lines = tempLines.ToArray();
      linenumber = 0;
@@ -99,8 +106,8 @@ public class simpleLexer : absLexer
        }
      if (s!=null && s.Length>0 && s[0]!=commentchar) {
         if (endofline!=null && endofline.Length>1)
-           s = s+ " " + endofline;
-        ssplit = Regex.Split(s,operators_re);
+           s = s+ " " + endofline; // This line is cause endofline to appear after lines
+        ssplit = Regex.Split(s,operators_re); // This line is causeing endofline to appear after lines
         ti = 0; // token index in ssplit
         return true;
      }

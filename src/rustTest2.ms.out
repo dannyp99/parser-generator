@@ -1,0 +1,10 @@
+expression tree after parse: Letexp("y", Val(0), Letexp("x", Val(2), Seq(Binop(10, Binop(8, Var("y"), Val(4)), Seq(Assign("x", Binop(2, Var("x"), Var("x"))), Seq(Assign("y", Binop(0, Var("y"), Val(1))), Seq(Uniop(3, Str("the value of y is now ")), Seq(Uniop(3, Var("y")), Seq(Uniop(3, Str("\n")), Nothing)))))), Seq(Uniop(3, Str("the final value of x is ")), Seq(Uniop(3, Var("x")), Seq(Uniop(3, Str("\n")), Nothing))))))
+
+the value of y is now 1
+the value of y is now 2
+the value of y is now 3
+the value of y is now 4
+the final value of x is 65536
+
+result after evaluation: 0
+compiled successfully

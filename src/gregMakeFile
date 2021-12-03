@@ -1,0 +1,4 @@
+ParGen:
+	fsharpc mongoose/mongoose_base.fs -a
+	mcs lexer/*.cs -r:mongoose_base.dll -out:lexer.dll
+	mcs *.cs -r:mongoose_base.dll,lexer.dll -out:ParGen.exe
