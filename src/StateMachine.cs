@@ -23,7 +23,7 @@ public class StateMachine
 
     public void makegotos(short si)
     {
-        bool TRACE = false;
+        bool TRACE = true;
         HashSet<Gitem> state = States[si];
         var newStates = new Dictionary<string, HashSet<Gitem>>(1024);
         foreach (Gitem item in state)
@@ -46,30 +46,42 @@ public class StateMachine
                 IStateAction currentAction;
                 FSM[si].TryGetValue(item.La, out currentAction);
                 var change = true;
+                // need to favor lower rule number
                 if(currentAction != null) {
                     if (currentAction is Reduce && currentAction.Next < item.Ri)//simulated pattern matching
                     {   
                         change = false;
-                        Console.WriteLine("Reduce-Reduce conflict!");
+                        if(TRACE) {
+                          Console.WriteLine("Reduce-Reduce conflict!");
+                        }
                         //PrintState()
                     }
                     else if (currentAction is Reduce && currentAction.Next > item.Ri)
                     {
-                        change = false;
-                        Console.WriteLine("Reduce-Reduce conflict!");
+                        change = true;
+                        if(TRACE){
+                          Console.WriteLine("Reduce-Reduce conflict!");
+                        } 
                         //PrintState()
                     }
                     else if (currentAction is Accept)
                     {
                         change = false;
-                        Console.WriteLine("Accept");
+                        if(TRACE){
+                          Console.WriteLine("Accept");
+                        }
                     }
+                    // MAKE SURE SHIFT-REDUCE CONFLICTS ARE RESOLVED
                     else if (currentAction is Shift)
                     {
                         var ruleRiPrec = Grammar.Rules[item.Ri].Precedence;
                         var symRiPrec = Grammar.Symbols[item.La].Precedence;
                         if (ruleRiPrec == symRiPrec && ruleRiPrec < 0) {change = false;}// right associative
                         else if (Math.Abs(symRiPrec) > Math.Abs(ruleRiPrec)) {change = false;}// still shift
+                        if(TRACE) {
+                          Console.WriteLine("Shift/Reduce Conflict");
+                          Console.WriteLine("Rule Precedence: " + ruleRiPrec + " -- Symbol Precedence: " + symRiPrec );
+                        }
                     }
                     else {
                         Console.WriteLine("Pattern Match Nothing");
@@ -89,7 +101,14 @@ public class StateMachine
                         }
                     }
                     else {
-                        FSM[si].Add(item.La, new Reduce(item.Ri));
+                        FSM[si].TryGetValue(item.La, out currentAction);
+                        if(currentAction == null){
+                          FSM[si].Add(item.La, new Reduce(item.Ri));
+                        }
+                        else{
+                          // Update rule message
+                          FSM[si][item.La] = new Reduce(item.Ri);
+                        }
                         //Console.WriteLine("***FSM["+si+"]["+item.La+"]=Reduce by "+item.Ri);                        
                     }
                 }// add IStateAction
@@ -171,9 +190,21 @@ public class StateMachine
             actionstr = "GotoState("+toAdd+")";            
         }
         if (FSM[psi].ContainsKey(nextSym)) {
+          IStateAction curAction = FSM[psi][nextSym];
+          if( curAction is Reduce) {
+            var ri = curAction.Next;
+            var ruleRiPrec = Grammar.Rules[ri].Precedence;
+            var symRiPrec = Grammar.Symbols[nextSym].Precedence;
+            if ((ruleRiPrec == symRiPrec && ruleRiPrec <0 )  || (Math.Abs(symRiPrec) > Math.Abs(ruleRiPrec))) {
+              FSM[psi][nextSym] = newAction;
+            }
+          } 
+          else {
             FSM[psi][nextSym] =  newAction;
+          }
         }
         else {
+            // Check Reduce
             FSM[psi].Add(nextSym, newAction);
         }
         if(TRACE){ 
@@ -272,11 +303,11 @@ public class StateMachine
             sw.Write("using static FSEvaluator;\n\n");
             sw.Write("class Generator{\n");
 
-            string TAT = Grammar.AbsynType ?? "object"; // can be replaced w/ object
+            string AbstractType = Grammar.AbsynType ?? "object"; // can be replaced w/ object
 
-            sw.Write(String.Format("public static Parser<{0}> make_parser()",TAT));
+            sw.Write(String.Format("public static Parser<{0}> make_parser()",AbstractType));
             sw.Write("\n{\n");
-            sw.Write(String.Format("Parser<{0}> parser1 = new Parser<{0}>({1},{2});\n",TAT,Grammar.Rules.Count,States.Count));
+            sw.Write(String.Format("Parser<{0}> parser1 = new Parser<{0}>({1},{2});\n",AbstractType,Grammar.Rules.Count,States.Count));
 
             sw.Write("RGrule rule = new RGrule(\"start\");\n");
             for(int i = 0; i < Grammar.Rules.Count; i++) {
@@ -344,48 +375,41 @@ public class StateMachine
     }//writefsm
     //bool TRACE = false;
     public static void Main(string[] argv) {
-        const bool TRACE = false;
-        if (argv.Length == 0) {
+        bool TRACE = true;
+        if(Console.IsInputRedirected){
             Grammar g = new Grammar();
-            g.TRACE = false;
-            g.ParseStdin();
-            
+            if (argv.Length > 0) {
+                g.TRACE = false;
+            }
+            g.ParseStdin(); 
             if (g.TRACE) {Console.Write("\n");}
-            // Console.WriteLine("info:");
-            // Console.WriteLine("topsym: " + g.TopSym);
-            // foreach (var rule in g.Rules) {
-            //     rule.PrintRule();
-            // }
-            
             g.ComputeFirst();
-            //g.PrintFirst();
-            //g.PrintNullable();
-            // Console.WriteLine("GrammarSym:" + g.Rules[0].Rhs[0]);
             
             var itemSet = new HashSet<Gitem>(256);  //(new GitemComparer());
             g.StateClosure(itemSet);
             StateMachine sm = new StateMachine(g);
-            Console.WriteLine("Gonna generate");
+            if(TRACE){
+              Console.WriteLine("Generating Finite State Machine");
+            }
             sm.generatefsm();
-            Console.WriteLine("Done Generating");
+            if(TRACE) {
+              Console.WriteLine("Finite State Machine Generated");
+            }
             
-            //for(int i=0;i<sm.States.Count;i++)
-            //{sm.prettyPrintFSM(sm.States[i], g);  Console.WriteLine("---State "+i+" above-------"); }
-            string testpath = "./par.cs";
-            sm.writefsm(testpath);
-            Console.WriteLine("FSM written to " + testpath);
+            string testpath = "./par.cs"; // add this in as an argument??
+            sm.writefsm(testpath); 
         }
-        else if(argv.Length > 0) {
-            string srcfile = argv[0];//"./mongoose/test1.ms";
-            simpleLexer SLexer = new simpleLexer(srcfile, "EOF");
-            //if(TRACE) { Console.WriteLine("SLexer is null? " + SLexer == null);}
-            var Par = Generator.make_parser(); 
-            //if(TRACE) { Console.WriteLine("Parser Generated"); } 
+        if(argv.Length == 1) {     
+            string srcfile = "./" + argv[0];
+            GrammarLexer SLexer = new GrammarLexer(srcfile);
+            if(TRACE) { Console.WriteLine("SLexer is null? " + SLexer == null);}
+            Parser<object> Par = Generator.make_parser(); 
+            if(TRACE) { Console.WriteLine("Parser Generated"); } 
             if(Par != null) {
                 expr t = (expr)Par.Parse(SLexer);
                 if(t != null) {
                     //FSPrint(t);
-                    run(t);
+                    // run(t);
                     Console.WriteLine("Result: "+t); 
                 }
             }

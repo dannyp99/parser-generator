@@ -17,35 +17,20 @@ left * 400
 left / 500
 left % 500
 left ^ 550
-#left ( 990
-#left ) 20
-#left COLON 42
 left = 30
 left == 35
 left <= 35
 left < 35
-#left let 42
-#left while 40
-#left if 40
-#left else 22
-#left cin 100
-#left cout 100
 left && 190
 left || 192
 left ! 194
-#left Var 100
-#left Val 100
-#left Str 100
-#left lambda 22
-#right ; 22
-#left . 22
 
 # rx(e) - makes new reference counting pointer
 # Nothing - enum type. I think closest is expr.EOF type
 E --> Val:n { return n; }
 E --> ( E:e )  { return e; }
 E --> ( Var:f E:x ) { return NewApp(f,x); }
-E --> cin { return NewUniop("CIN",expr.EOF); }
+E --> cin { return NewUniop("CIN", NewFSNothing); }
 E --> cout Str:s { return NewUniop("COUT",NewSym(s)); } 
 E --> cout E:e { return NewUniop("COUT",e); }
 E --> E:a + E:b { return NewBinop("+",a,b); }
@@ -68,7 +53,7 @@ E --> Var:x = E:e { return NewAssign(x,e); }
 E --> lambda Var:x . E:e { return NewLambda(x,e); }
 E --> if E:c E:a  else E:b { return NewIfelse(c,a,b); }
 E --> E:e ; ES:es { return NewSeq(e,es); }
-ES -->  { return expr.EOF; }
+ES -->  { return NewFSNothing; }
 ES --> E:e ; ES:es { return NewSeq(e,es); }
 E --> Var:x { return NewVar(x); }
 

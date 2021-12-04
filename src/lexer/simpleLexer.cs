@@ -40,7 +40,7 @@ using System.Collections.Generic;
 public class simpleLexer : absLexer
 {
   public static string operators_re =
-    "([()\\+\\-\\*/:;%^<>!,]|\\s|\\[|\\]|{|}|=|\"[^\"]*\")";
+    "([()\\+\\-\\*/:;%^<>!,.]|\\s|\\[|\\]|{|}|=|\"[^\"]*\")";
 
   public string endofline = null; //"ENDL";
   // optional endofline marker
@@ -78,10 +78,17 @@ public class simpleLexer : absLexer
 
   public simpleLexer(string filename, string eof) // read from file
   {
+     bool TRACE = false;
      foreach (string kw in keywords) addKeyword(kw);
      foreach (string ms in multichar_syms) addMultichar(ms);  
-     endofline = eof;
+     //endofline = eof;
      var tempLines = new List<string>(System.IO.File.ReadAllLines(filename));
+     if(TRACE){
+        Console.WriteLine("Raw File Lines from simplexLexer:");
+        foreach(string s in tempLines){
+           Console.WriteLine(s);
+        }
+     }
      tempLines.Add("EOF");
      lines = tempLines.ToArray();
      linenumber = 0;
@@ -99,8 +106,8 @@ public class simpleLexer : absLexer
        }
      if (s!=null && s.Length>0 && s[0]!=commentchar) {
         if (endofline!=null && endofline.Length>1)
-           s = s+ " " + endofline;
-        ssplit = Regex.Split(s,operators_re);
+           s = s+ " " + endofline; // This line is cause endofline to appear after lines
+        ssplit = Regex.Split(s,operators_re); // This line is causeing endofline to appear after lines
         ti = 0; // token index in ssplit
         return true;
      }
@@ -147,32 +154,33 @@ public class simpleLexer : absLexer
 
   public int linenum() {return linenumber;}
   public virtual lexToken translate_token(lexToken t) { return t; }
+}
 
 
   /////// main for testing
-  public static void Main(string[] argv)
-  {
-     string ax = "while (1) fork();";
-     if (argv.Length>0) ax = argv[0];
-     absLexer scanner = new simpleLexer(ax);
-     lexToken token;
-     do {
-        token = scanner.next();
-        if (token!=null) Console.WriteLine("lexToken: "+token);
-     }
-     while (token!=null);
+//   public static void Main(string[] argv)
+//   {
+//      string ax = "while (1) fork();";
+//      if (argv.Length>0) ax = argv[0];
+//      absLexer scanner = new simpleLexer(ax);
+//      lexToken token;
+//      do {
+//         token = scanner.next();
+//         if (token!=null) Console.WriteLine("lexToken: "+token);
+//      }
+//      while (token!=null);
 
-     Console.WriteLine("\ntesting file input from lexertest.txt..");
-     scanner = new simpleLexer("simpleTest.txt",null);
-     do {
-        token = scanner.next();
-        if (token!=null) Console.WriteLine("Token from file: "+token);
-     }
-     while (token!=null);
-     Console.WriteLine("line number at "+scanner.linenum());
+//      Console.WriteLine("\ntesting file input from lexertest.txt..");
+//      scanner = new simpleLexer("simpleTest.txt",null);
+//      do {
+//         token = scanner.next();
+//         if (token!=null) Console.WriteLine("Token from file: "+token);
+//      }
+//      while (token!=null);
+//      Console.WriteLine("line number at "+scanner.linenum());
      
-  }//main
-}//simpleLexer
+//   }//main
+// }//simpleLexer
 
 /*  sample run:
 $ mcs simpleLexer.cs absLexer.cs

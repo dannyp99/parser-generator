@@ -6,22 +6,35 @@ open System.Collections.Generic;
 
 type environ = (string*expr ref) list 
   and
-  expr = Val of int | Str of string | Binop of (string*expr*expr) | Uniop of (string*expr) | Var of string | Ifelse of expr*expr*expr | Seq of (expr list) | Letexp of string*expr*expr | Closure of (environ*expr) | App of string*expr | Lambda of string*expr | Assign of string*expr | Sym of string | EOF ;;
-// the following are 'Constructors' for easier integration into C#
-// We never make environ outside of the fsharp code.
+  expr = Val of int | Str of string | Binop of (string*expr*expr) | Uniop of (string*expr) | Var of string | Ifelse of expr*expr*expr | Seq of (expr list) | Letexp of string*expr*expr | App of string*expr | Lambda of string*expr | Assign of string*expr | Sym of string | Nothing with
+    override this.ToString() = 
+      match this with 
+        | Val(i) -> "Val(" + i.ToString() + ")"
+        | Str(s) | Var(s) | Sym(s) -> s
+        | Binop(s,e1,e2) -> "Binop(" + s + ", " + e1.ToString() + ", " + e2.ToString() + " )"
+        | Uniop(s,e) -> "Uniop(" + s + ", " + e.ToString() + " )"
+        | Ifelse(e1,e2,e3) -> "Ifelse(" + e1.ToString() + ", " + e2.ToString() + ", " + e3.ToString() + " )"
+        | Seq(car::cdr) -> "Sequence(" + car.ToString() + ", " + cdr.ToString() + " )"
+        | Letexp(s,e1,e2) -> "Letexp(\"" + s + "\", " + e1.ToString() + ", " + e2.ToString() + " )"
+        | App(s,e) -> "App(" + s + ", " + e.ToString() + ")"
+        | Lambda(s,e) -> "Lambda(" + s + ", " + e.ToString() + ")" 
+        | Assign(s,e) -> "Assign(" + s + ", " + e.ToString() + ")"
+        | Nothing -> "Nothing"
+        | expr -> "This expr is not supported by ToString() yet" // place holder to implement the rest of the expr ToStrings
+
 let NewVal(v) = Val(v);
+let NewStr(s) = Str(s);
 let NewBinop(s,e1,e2) = Binop(s,e1,e2);
-let NewUniop(s,exp) = Uniop(s,exp);
+let NewUniop(s,e) = Uniop(s,e);
 let NewVar(s) = Var(s);
 let NewIfelse(e1,e2,e3) = Ifelse(e1,e2,e3);
-let NewSeq(e,elist) = Seq([e;elist]);
-let NewLetexp(s,e1,e2) = Letexp(s,e1,e2)
-let NewClosure(env,exp) = Closure(env,exp)
-let NewApp(s,exp) = App(s,exp)
+let NewSeq(e,es) = Seq([e;es]); // I still have my concerns about this. but I believe is keeps the car::cdr functionality. It will end with [Nothing] and not Nothing though. 
+let NewLetexp(s,e1,e2) = Letexp(s,e1,e2);
+let NewApp(s,exp) = App(s,exp);
 let NewLambda(s,exp) = Lambda(s,exp);
 let NewAssign(s,exp) = Assign(s,exp);
 let NewSym(s) = Sym(s);
-let NewEOF = EOF;
+let NewFSNothing = Nothing; 
 
 let rec lookup x (env:environ) =   // returns expr
    match env with
@@ -109,39 +122,53 @@ eval <- fun (env:environ) exp ->
 ////////////////////////////////////////////////////
 // I do not think you can call certain variables depending on mutable/rec. Need
 // to make an "entry" function
-// let mutable printTree = fun result (parseTree:expr) -> "";;
-// printTree <- fun result (parseTree:expr) ->
-//   match parseTree with
-//     | Val(x) -> 
-//         result = result + "Val("+string(x)+")"; 
-//         //endString <- endString + "Val(" + string(x) + ")"
-//     | Binop(a,b,c) -> 
-//         result = result + "Binop(" + string(a) + "," + (printTree b) + "," + (printTree c) + ")"; 
-//         //endString <- endString + string(a) + "("+ (printTree b) +","+ (printTree c) +")"
-//     | Ifelse(a,b,c) -> 
-//         result = result + "if(" + string(a) + "," + (printTree b) + "," + (printTree c) + ")"; 
-//         result
-//         //endString <- endString + string(a) + "(" + (printTree b) +","+ (printTree c) + ")"
-//     | _ ->  
-//         result = "Unrecognized expression"; 
-//         result;
-//   endString;;
+let mutable printTree = fun (parseTree:expr) -> ();;
+printTree <- fun (parseTree:expr) ->
+  match parseTree with
+    | Val(x) -> 
+        Console.Write("Val("+string(x)+")"); 
+        ();
+        //endString <- endString + "Val(" + string(x) + ")"
+    | Binop(a,b,c) -> 
+        Console.Write("Binop("+string(a))
+        Console.Write(",")
+        (printTree b) 
+        Console.Write(",")
+        (printTree c) 
+        Console.Write(")"); 
+        ();
+        //endString <- endString + string(a) + "("+ (printTree b) +","+ (printTree c) +")"
+    | Ifelse(a,b,c) -> 
+        Console.Write("if(")
+        (printTree a)
+        Console.Write(",")
+        (printTree b)
+        Console.Write(",") 
+        (printTree c)
+        Console.Write(")"); 
+        ();
+        //endString <- endString + string(a) + "(" + (printTree b) +","+ (printTree c) + ")"
+    | _ ->  
+        Console.Write("Unrecognized expression"); 
+        ();
 
 
-// let FSPrint(e:expr) = 
-//   Console.WriteLine("Parse Tree:")
-//   Console.WriteLine((printTree "" e)
+let FSPrint(e:expr) = 
+  Console.WriteLine("Parse Tree:")
+  (printTree e)
+  Console.WriteLine("");;
+
 let run(e:expr) = 
   printfn "%A" (eval [] e);
 
 
 ////////////////       LEXICAL ANALYZER (LEXER, TOKENIZER)
 //// must adopt basic lexer written in C# (in simpleLexer.dll)
-// let mutable TS =[];; // global list of tokens
-// let mutable TI = 0;; // global index for TS stream;;
-// let mutable input_string = "";; // default input string, GLOBAL!
+//let mutable TS =[];; // global list of tokens
+//let mutable TI = 0;; // global index for TS stream;;
+//let mutable input_string = "";; // default input string, GLOBAL!
 
-// // function to convert C# lexToken structures to F# type expr
+// function to convert C# lexToken structures to F# type expr
 // let convert_token (token:lexToken) =
 //   match token.token_type with
 //    | "Integer" -> Val(token.token_value :?> int) // :?> downcasts from obj
