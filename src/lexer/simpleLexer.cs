@@ -154,33 +154,33 @@ public class simpleLexer : absLexer
 
   public int linenum() {return linenumber;}
   public virtual lexToken translate_token(lexToken t) { return t; }
-
+}
 
 
   /////// main for testing
-  public static void Main(string[] argv)
-  {
-     string ax = "while (1) fork();";
-     if (argv.Length>0) ax = argv[0];
-     absLexer scanner = new simpleLexer(ax);
-     lexToken token;
-     do {
-        token = scanner.next();
-        if (token!=null) Console.WriteLine("lexToken: "+token);
-     }
-     while (token!=null);
+//   public static void Main(string[] argv)
+//   {
+//      string ax = "while (1) fork();";
+//      if (argv.Length>0) ax = argv[0];
+//      absLexer scanner = new simpleLexer(ax);
+//      lexToken token;
+//      do {
+//         token = scanner.next();
+//         if (token!=null) Console.WriteLine("lexToken: "+token);
+//      }
+//      while (token!=null);
 
-     Console.WriteLine("\ntesting file input from lexertest.txt..");
-     scanner = new simpleLexer("simpleTest.txt",null);
-     do {
-        token = scanner.next();
-        if (token!=null) Console.WriteLine("Token from file: "+token);
-     }
-     while (token!=null);
-     Console.WriteLine("line number at "+scanner.linenum());
+//      Console.WriteLine("\ntesting file input from lexertest.txt..");
+//      scanner = new simpleLexer("simpleTest.txt",null);
+//      do {
+//         token = scanner.next();
+//         if (token!=null) Console.WriteLine("Token from file: "+token);
+//      }
+//      while (token!=null);
+//      Console.WriteLine("line number at "+scanner.linenum());
      
-  }//main
-}//simpleLexer
+//   }//main
+// }//simpleLexer
 
 /*  sample run:
 $ mcs simpleLexer.cs absLexer.cs
