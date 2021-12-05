@@ -116,7 +116,7 @@ public class simpleLexer : absLexer
 
   static bool alphabetical(char x) => (x >=65 && x<=90) || (x>=97 && x<=122);
 
-  public lexToken next()
+  public virtual lexToken next()
   {
      string tok = "";
      if (ssplit==null) return null;

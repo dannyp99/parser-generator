@@ -1,16 +1,17 @@
 using System;
 using static FSEvaluator;
-public class MongooseLexer : simpleLexer
+public class CPlusMinusLexer : simpleLexer
 {
-    public MongooseLexer() {}
-    public MongooseLexer(string s): base(s) {}
-    public MongooseLexer(string a, string b): base(a,b) {}
+    public CPlusMinusLexer() {}
+    public CPlusMinusLexer(string s): base(s) {}
+    public CPlusMinusLexer(string a, string b): base(a,b) {}
 
     public override lexToken next() {
         var tok = base.next();
         return translate_token(tok);
     }
-    public override lexToken translate_token(lexToken t) 
+
+    public override lexToken translate_token(lexToken t)
     {
         if (t.token_type == "Integer") { t.token_type = "Val"; t.token_value = NewVal((int)t.token_value); } 
         else if (t.token_type == "Symbol") { 

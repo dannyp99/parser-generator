@@ -37,7 +37,6 @@ public class Parser<Object>
     public void RawParse(simpleLexer tokenizer){
         bool TRACE = false;
         List<lexToken> ToTranslate = new List<lexToken>();
-        absLexer abLexer = new concreteLexer();
         using( StreamWriter sw = new StreamWriter("./RawParse.txt")) {
             var token = tokenizer.next();
             while(token != null) {
@@ -48,15 +47,10 @@ public class Parser<Object>
                 ToTranslate.Add(token);
                 token = tokenizer.next();
             }
-            sw.Write("--------Translated---------\n");
-            foreach(lexToken lt in ToTranslate){
-                sw.Write(abLexer.translate_token(lt) + "\n");
-            }
-            sw.Write("---End File---"); 
         }
     }
-
-    public object Parse(GrammarLexer tokenizer) //used to be simpleLexer, GrammarLexer conversion
+//absLexer
+    public object Parse(simpleLexer tokenizer) //used to be simpleLexer, GrammarLexer conversion
     {
         bool TRACE = true;
         //1 absLexer abstractLex = new concreteLexer();
@@ -69,12 +63,10 @@ public class Parser<Object>
         // action is error until it isnt
         IStateAction action = unexpected;
         bool stopparsing = false;
-        //1 var nextoken = tokenizer.next();
-        lexToken lookahead = tokenizer.next(); // GrammarLexer Conversion
+        var lookahead = tokenizer.next();
         if(TRACE) {
             //Console.WriteLine("*** First token: "+nextoken);        
         }
-        //1 lexToken lookahead = abstractLex.translate_token(nextoken);
         if(TRACE) {
             Console.WriteLine("*** First translated token: "+lookahead);                
         }

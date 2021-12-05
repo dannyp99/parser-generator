@@ -399,11 +399,27 @@ public class StateMachine
             string testpath = "./par.cs"; // add this in as an argument??
             sm.writefsm(testpath); 
         }
-        if(argv.Length == 1) {     
-            string srcfile = "./" + argv[0];
-            GrammarLexer SLexer = new GrammarLexer(srcfile);
+        if(argv.Length >= 1) {
+            string lexType = argv[0];
+            string srcfile = argv[1];
+            LexerFactory factory = null; //new MongooseFactory(srcfile, "EOF");
+            switch (lexType.ToLower())
+            {
+                case "calc":
+                    factory = new CalcFactory(srcfile, "EOF");
+                    break;
+                case "cplusminus":
+                    factory = new CPlusMinusFactory(srcfile, "EOF");
+                    break;
+                case "mongoose":
+                    factory = new MongooseFactory(srcfile, "EOF");
+                    break;
+                default:
+                    break;
+            }
+            simpleLexer SLexer = factory.GetSimpleLexer();
             if(TRACE) { Console.WriteLine("SLexer is null? " + SLexer == null);}
-            Parser<object> Par = Generator.make_parser(); 
+            var Par = Generator.make_parser(); 
             if(TRACE) { Console.WriteLine("Parser Generated"); } 
             if(Par != null) {
                 expr t = (expr)Par.Parse(SLexer);

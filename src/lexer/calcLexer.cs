@@ -1,10 +1,15 @@
 using System;
 using static FSEvaluator;
-public class concreteLexer : simpleLexer {
+public class CalcLexer : simpleLexer {
 
-    public concreteLexer() {}
-    public concreteLexer(string s) : base(s) {}
-    public concreteLexer(string a, string b): base(a,b) {}
+    public CalcLexer() {}
+    public CalcLexer(string s) : base(s) {}
+    public CalcLexer(string a, string b): base(a,b) {}
+
+     public override lexToken next() {
+        var tok = base.next();
+        return translate_token(tok);
+    }
 
     public override lexToken translate_token(lexToken t)
     {
