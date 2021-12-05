@@ -5,7 +5,7 @@ nonterminal ES expr
 terminal + - * / % ^ ( ) COLON = < <= == . ; && || ! 
 terminal if else while let cin cout lambda
 typedterminal Var string
-typedterminal Val expr
+typedterminal Val int
 typedterminal Str string
 topsym E
 
@@ -27,7 +27,7 @@ left ! 194
 
 # rx(e) - makes new reference counting pointer
 # Nothing - enum type. I think closest is expr.EOF type
-E --> Val:n { return n; }
+E --> Val:n { return NewVal(n); }
 E --> ( E:e )  { return e; }
 E --> ( Var:f E:x ) { return NewApp(f,x); }
 E --> cin { return NewUniop("CIN", NewFSNothing); }

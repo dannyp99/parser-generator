@@ -10,7 +10,7 @@ public static Parser<object> make_parser()
 Parser<object> parser1 = new Parser<object>(29,460);
 RGrule rule = new RGrule("start");
 rule = new RGrule("E");
-rule.RuleAction = (pstack) => { Console.WriteLine(0); expr n = (expr)pstack.Pop().Value; return n; };
+rule.RuleAction = (pstack) => { Console.WriteLine(0); int n = (int)pstack.Pop().Value; return NewVal(n); };
 parser1.Rules.Add(rule);
 rule = new RGrule("E");
 rule.RuleAction = (pstack) => { Console.WriteLine(1);pstack.Pop();  expr e = (expr)pstack.Pop().Value; pstack.Pop(); return e; };

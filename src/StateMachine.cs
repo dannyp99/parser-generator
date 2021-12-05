@@ -331,19 +331,19 @@ public class StateMachine
                     k--;
                 } // end Rhs while
                 if(TRACE){
-                    Console.WriteLine("Exit While");
-                    Grammar.Rules[i].PrintRule();
-                    Console.WriteLine("Action: [" + Grammar.Rules[i].Action + "]"); //never put in Action to the grammars??
+                    //Console.WriteLine("Exit While");
+                    //Grammar.Rules[i].PrintRule();
+                    //Console.WriteLine("Action: [" + Grammar.Rules[i].Action + "]"); //never put in Action to the grammars??
                 }
                 string semaction = Grammar.Rules[i].Action ?? ""; 
                 
                 if(TRACE){
-                    Console.WriteLine("Begin SemanticAction ifs");
-                    Console.WriteLine(semaction);
+                    //Console.WriteLine("Begin SemanticAction ifs");
+                    //Console.WriteLine(semaction);
                 }
                 if(semaction.Length>1) { 
                     if(TRACE) {
-                        Console.WriteLine("semaction.Length > 1");
+                        //Console.WriteLine("semaction.Length > 1");
                     }
                     sw.Write(String.Format("{0};\n",semaction));
                 }
@@ -375,7 +375,7 @@ public class StateMachine
     }//writefsm
     //bool TRACE = false;
     public static void Main(string[] argv) {
-        bool TRACE = true;
+        bool TRACE = false;
         if(Console.IsInputRedirected){
             Grammar g = new Grammar();
             if (argv.Length > 0) {
@@ -399,6 +399,7 @@ public class StateMachine
             string testpath = "./par.cs"; // add this in as an argument??
             sm.writefsm(testpath); 
         }
+        /*
         if(argv.Length >= 1) {
             string lexType = argv[0];
             string srcfile = argv[1];
@@ -433,6 +434,6 @@ public class StateMachine
                 Console.WriteLine("Error in Parser Generation. Parser Generator is null");
             }
             
-        }
+        } */
     }//main
 }
