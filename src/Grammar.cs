@@ -3,20 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
-
-public class RGrule 
-{ 
-    public string Lhs;
-    public Func<Stack<StackElement<object>>,object> RuleAction;
-
-    public RGrule() {}
-    public RGrule(string lh)
-    {
-        Lhs=lh;
-        RuleAction = (p) => {return new object();};
-    }
-}
-
 public class GrammarSym {
     public string Sym { get; set; }
     public string FsharpType { get; set; }
@@ -170,7 +156,7 @@ public class Grammar
         while (!atEOF)
         {
             line = Console.ReadLine();
-            Console.WriteLine(line);
+            //Console.WriteLine(line);
             Linenum += 1;
 
             if (line == null)

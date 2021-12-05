@@ -13,7 +13,7 @@ public class CPlusMinusLexer : simpleLexer
 
     public override lexToken translate_token(lexToken t)
     {
-        if (t.token_type == "Integer") { t.token_type = "Val"; t.token_value = NewVal((int)t.token_value); } 
+        if (t.token_type == "Integer") { t.token_type = "string";} 
         else if (t.token_type == "Symbol") { 
             if((string)t.token_value ==":") {
                 t.token_type = "COLON";
@@ -23,23 +23,10 @@ public class CPlusMinusLexer : simpleLexer
             }
         }
         else if (t.token_type == "Alphanumeric") { 
-            if((string)t.token_value == "EOF"){
-                t.token_type = "EOF";
-                t.token_value = NewFSNothing;
-            }
-            else if((string)t.token_value =="cout") {
-                t.token_type = (string)t.token_value;
-                t.token_value = NewStr((string)t.token_value);
-            }
-            else if((string)t.token_value =="cin") { 
-                t.token_type = (string)t.token_value;
-            }
-            else{
-                t.token_type = "Var"; 
-            }
+            t.token_type = (string) t.token_value;
         } 
         else if (t.token_type =="Keyword") { t.token_type = (string)t.token_value;}
-        else if (t.token_type =="StringLiteral") { t.token_type = "Str"; t.token_value = NewStr((string)t.token_value); }
+        else if (t.token_type =="StringLiteral") { t.token_type = "EXPR";}
         return t; 
     }
 }

@@ -2,6 +2,20 @@ using System;
 using System.Collections.Generic;
 using System.IO; //For RawParse function
 
+
+public class RGrule 
+{ 
+    public string Lhs;
+    public Func<Stack<StackElement<object>>,object> RuleAction;
+
+    public RGrule() {}
+    public RGrule(string lh)
+    {
+        Lhs=lh;
+        RuleAction = (p) => {return new object();};
+    }
+}
+
 public class StackElement<Object>
 {
     public int Si {get; set;}
@@ -50,7 +64,7 @@ public class Parser<Object>
         }
     }
 //absLexer
-    public object Parse(simpleLexer tokenizer) //used to be simpleLexer, GrammarLexer conversion
+    public object Parse(absLexer tokenizer) //used to be simpleLexer, GrammarLexer conversion
     {
         bool TRACE = true;
         //1 absLexer abstractLex = new concreteLexer();

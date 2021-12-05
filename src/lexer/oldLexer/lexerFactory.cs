@@ -5,7 +5,7 @@ using static FSEvaluator; // for the Discriminated Union types
 
 public class GrammarLexer : absLexer 
 {
-  public simpleLexer SLexer;
+  public absLexer SLexer;
 
   public GrammarLexer(string srcfile) {
     SLexer = new simpleLexer(srcfile,"EOF");

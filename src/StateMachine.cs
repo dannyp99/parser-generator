@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Diagnostics;
-using static FSEvaluator;
 
 //used in write_fsm becasue we need state indices and their semantic action combined.
 
@@ -23,7 +22,7 @@ public class StateMachine
 
     public void makegotos(short si)
     {
-        bool TRACE = true;
+        bool TRACE = false;
         HashSet<Gitem> state = States[si];
         var newStates = new Dictionary<string, HashSet<Gitem>>(1024);
         foreach (Gitem item in state)
@@ -375,8 +374,7 @@ public class StateMachine
     }//writefsm
     //bool TRACE = false;
     public static void Main(string[] argv) {
-        bool TRACE = false;
-        if(Console.IsInputRedirected){
+        if(Console.IsInputRedirected && argv.Length > 0){
             Grammar g = new Grammar();
             if (argv.Length > 0) {
                 g.TRACE = false;
@@ -385,55 +383,18 @@ public class StateMachine
             if (g.TRACE) {Console.Write("\n");}
             g.ComputeFirst();
             
+            string testpath = argv[0] + "/par.cs"; // add this in as an argument??
             var itemSet = new HashSet<Gitem>(256);  //(new GitemComparer());
             g.StateClosure(itemSet);
             StateMachine sm = new StateMachine(g);
-            if(TRACE){
-              Console.WriteLine("Generating Finite State Machine");
-            }
+            Console.WriteLine("Generating Finite State Machine");
             sm.generatefsm();
-            if(TRACE) {
-              Console.WriteLine("Finite State Machine Generated");
-            }
-            
-            string testpath = "./par.cs"; // add this in as an argument??
+            Console.WriteLine("Finite State Machine Generated as " + testpath);
+
             sm.writefsm(testpath); 
+        } else {
+            Console.WriteLine("Please direct a grammar and pass a destination.");
+            Console.WriteLine("Ex. mono Generate.exe < ./path/to/file.grammar /path/to/save/fsm");
         }
-        /*
-        if(argv.Length >= 1) {
-            string lexType = argv[0];
-            string srcfile = argv[1];
-            LexerFactory factory = null; //new MongooseFactory(srcfile, "EOF");
-            switch (lexType.ToLower())
-            {
-                case "calc":
-                    factory = new CalcFactory(srcfile, "EOF");
-                    break;
-                case "cplusminus":
-                    factory = new CPlusMinusFactory(srcfile, "EOF");
-                    break;
-                case "mongoose":
-                    factory = new MongooseFactory(srcfile, "EOF");
-                    break;
-                default:
-                    break;
-            }
-            simpleLexer SLexer = factory.GetSimpleLexer();
-            if(TRACE) { Console.WriteLine("SLexer is null? " + SLexer == null);}
-            var Par = Generator.make_parser(); 
-            if(TRACE) { Console.WriteLine("Parser Generated"); } 
-            if(Par != null) {
-                expr t = (expr)Par.Parse(SLexer);
-                if(t != null) {
-                    //FSPrint(t);
-                    // run(t);
-                    Console.WriteLine("Result: "+t); 
-                }
-            }
-            else {
-                Console.WriteLine("Error in Parser Generation. Parser Generator is null");
-            }
-            
-        } */
     }//main
 }

@@ -13,7 +13,7 @@ public class CalcLexer : simpleLexer {
 
     public override lexToken translate_token(lexToken t)
     {
-        if (t.token_type == "Integer") { t.token_type = "Val"; t.token_value = NewVal((int)t.token_value); }
+        if (t.token_type == "Integer") { t.token_type = "int"; t.token_value = NewVal((int)t.token_value); }
         else if (t.token_type == "Symbol") {
             t.token_type = (string) t.token_value;
         }
