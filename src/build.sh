@@ -12,4 +12,5 @@ if [[ $# -gt 1 ]];then
     mono Generate.exe < "$1" "$2"
 else
     echo "Please pass a directory for where you want to save the FSM";
+    echo "Ex. ./build.sh ./path/to/file.grammar ./path/to/output/par.cs"
 fi

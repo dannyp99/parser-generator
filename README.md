@@ -1,47 +1,84 @@
 # Parser Generator
 
-Build the FSM first if it doesn't exist or needs to be regenerated.
+## Table of Contents
+
+[Building the Grammar FSM](#building-the-grammar-fsm)
+
+[Your Responsibility](#your-responsibility)
+
+- [F# Abstract Syntax Tree](#f-abstract-syntax-tree)
+
+- [Lexical Analyzer](#lexical-analyzer)
+  - [Token Types](#token-types)
+
+- [Main Function](#main-function)
+
+[Compile & Test File](#compile--test-file)
+
+## Building the Grammar FSM
+
+For building the Finite State Machine, simply use the `build.sh` script with the appropriate arguments.
 
 ```bash
-make fsm < ./path_to_file.grammar
+  ./build.sh ./path/to/file.grammar ./path/to/output/par.cs
 ```
 
-Run the parser with a simple `make` and file to compile and run
+This will generate the FSM in the par.cs file in the directory argument passed. If the folder doesn't exist it will create it for you.
 
-```bash
-make compfile=./path_to_test_file.ms # .ms for mongoose files
+## Your Responsibility
+
+- F# Abstract Syntax Tree
+- Lexical Analyzer that implements the `absLexer` interface
+- Main to run your code.
+
+### F# Abstract Syntax Tree
+
+For the sake of simplicity we allow users to make a discrete union of the types for their Abstract Syntax Tree. **However**, creating one is not always necessary for simple grammars. If your Grammar uses C# types and doesn't need a f# file you are only required to create a f# file with the following code:
+
+```fsharp
+module FSEvaluator
 ```
 
-If the `.exe` file is not automatically deleted, please do so to enforce make to recompile.
+To simplify the importing of F# code we recommend translator functions and for minimal changes an example of calculator is shown below:
 
-*Or* run `make clean` to enforce makefile to rebuild `dlls` and `exe`.
+```fsharp
+module FSEvaluator
+open System;;
+open Microsoft.FSharp.Math;;
+open System.Text.RegularExpressions;;
 
-&nbsp;
+type expr = Val of int | Plus of (expr*expr) | Times of (expr*expr) | Subtract of (expr*expr) | Divide of (expr*expr) | Expt of (expr*expr) | Uminus of expr | Sym of String | EOF;;
 
-## Parsers
-
-In the case of running different grammars that need different values from the previous grammar you just need to modify the parser.dll target in the `makefile`.
-
-```makefile
-parser.dll: /path/to/fsharp/parser/file.fs
-    fsharpc /path/to/fsharp/parser/file.fs -a -out:parser.dll
+let NewVal(a) = Val(a);
+let NewPlus(a,b) = Plus(a,b);
+let NewTimes(a,b) = Times(a,b);
+let NewSubtract(a,b) = Subtract(a,b);
+let NewDivide(a,b) = Divide(a,b);
+let NewExpt(a,b) = Expt(a,b);
+let NewUminus(a) = Uminus(a);;
 ```
 
-This file should have the following for the Parse Tree:
+### Lexical Analyzer
 
-- A disecrete union handling the different types that will be used.
-- Constructors for C# integrations
-- Eval and Run functions are needed to **evaluate the Parse Tree.**
+For full freedom we only require your Lexical Analyzer implements the absLexer interface:
 
-## Lexer
+```csharp
+public interface absLexer
+{
+   lexToken next(); // returns null at eof. Should return a token of the appropriate type
+   int linenum();
+}
+```
 
-The only requirement here is that if needed you must write a `translate_token(lexToken t)` function to translate the token types to those of your discrete union. The constructors of this class can simply call the parent class constructor. Use `calcLexer.cs` in `./lexer` as an example (see [Token Types](#token-types)).
+If you wish to fully leverage our lexical analyzer we allow you to extend the `simpleLexer` class which handles the `next()` and `linenum()`. **However**, you must override:
 
-- The `makefile` will compile all C# code in the lexer folder. To swap out lexers simple `mv` the class that implements the `translate_token(lexToken t)` you want in the `./lexer` folder and move any other classes into `./oldLexer`.
-- In rare instances you may need to change the `simpleLexer.cs` if the operator for your grammar is not included.
-  - One example was that `<<` commonly used in C++ was not originally detectable.
+```csharp
+public virtual lexToken translate_token(lexToken t)
+```
 
-### Token Types
+This is because the `simpleLexer.next()` only returns of the token types below. You also need to have matching constructors but you can simply invoke the inherited constructor.
+
+#### Token Types
 
 - "Symbol"   (non-alphanumeric symbols such as *, +, ==, etc )
 - "Keyword"  (while, if ,else, etc)
@@ -50,20 +87,71 @@ The only requirement here is that if needed you must write a `translate_token(le
 - "Float"    (non-negative doubles 3.15)
 - "StringLiteral" (double-quoted strings without nested ""'s)
 
-## Debugging
+An example of how we do this with calculator below
 
-The `launch.json` is configured with the [ms-vscode.mono-debug](https://marketplace.visualstudio.com/items?itemName=ms-vscode.mono-debug) extension for VSCode please be sure to install the extension before attempting to debug.
+```csharp
+using System;
+using static FSEvaluator;
+public class CalcLexer : simpleLexer {
 
-**NOTE:** The debugger is only set to debug the code after running the writefsm.
+    public CalcLexer() {}
+    public CalcLexer(string s) : base(s) {}
+    public CalcLexer(string a, string b): base(a,b) {}
 
-Build and Debug all with one make
+     public override lexToken next() {
+        var tok = base.next();
+        return translate_token(tok);
+    }
 
-First run the debugger and then run the following command
-
-```bash
-make debug compfile=./path_to_test_file.ms
+    public override lexToken translate_token(lexToken t)
+    {
+        if (t.token_type == "Integer") { t.token_type = "int"; t.token_value = NewVal((int)t.token_value); }
+        else if (t.token_type == "Symbol") {
+            t.token_type = (string) t.token_value;
+        }
+        else if (t.token_type == "Alphanumeric") {t.token_type = (string)t.token_value;}
+        else if (t.token_type =="Keyword") { t.token_type = (string)t.token_value;}
+        Console.WriteLine(t);
+        return t;
+    }
 ```
 
-If the `.exe` file is not automatically deleted, please do so to enforce make to recompile.
+### Main Function
 
-*Or* run `make clean` to enforce makefile to rebuild dlls and exe.
+The final requirement is a class with a `Main` function to run the fsm and call the parser and pass an instance of your lexical analyzer. An example of the Calculator Main is shown below:
+
+```csharp
+using System; //consoles
+using static FSEvaluator; //needed for expr
+class Driver {
+  public static void Main(string[] argv){
+    string srcfile = "./test1.ms";
+    if(argv.Length >= 1) { srcfile = argv[0]; }
+      var Par = Generator.make_parser(); 
+      if(Par != null) {
+        expr t = (expr)Par.Parse(new CalcLexer(srcfile, "EOF"));
+        if(t != null) {
+            //FSPrint(t);
+            run(t);
+            Console.WriteLine("Result: "+t); 
+        }
+      }
+  }
+}
+```
+
+## Compile & Test File
+
+After meeting these prerequisites, you can now use the `compile.sh` script to run the code.
+
+```bash
+./compile.sh folder
+# ex: ./compile.sh mongoose
+# this command will grab and compile the necessary files mentioned above to compile the ParGen.exe
+```
+
+This will generate `ParGen.exe` which you can run and pass files to to test your language code files.
+
+```bash
+mono ParGen.exe ./calculator/test1.calc
+```
