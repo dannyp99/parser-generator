@@ -1,5 +1,4 @@
 using System;
-using static FSEvaluator;
 public class CPlusMinusLexer : simpleLexer
 {
     public CPlusMinusLexer() {}

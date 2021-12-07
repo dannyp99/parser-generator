@@ -1,5 +1,4 @@
 using System; //consoles
-using static FSEvaluator; //needed for expr
 class Driver {
   public static void Main(string[] argv){
     string srcfile = "./cplusminus/cmpError.txt";
