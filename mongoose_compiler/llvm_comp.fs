@@ -108,6 +108,7 @@ declare i32 @mongoose_not(i32)
 declare i32 @mongoose_neg(i32)\n"
 
 let mutable compile_binop = fun (op,x,y,bvar,alpha,label) -> ("","","")
+let mutable compile_ifelse = fun (c,t,f,bvar,alpha,label) -> ("","","")
 
 let rec comp_llvm  (exp,bvar,alpha,label) =
     match exp with
@@ -116,6 +117,11 @@ let rec comp_llvm  (exp,bvar,alpha,label) =
         | Binop(op,x,y) ->
             compile_binop(op, x, y, bvar, alpha, label)
         | Ifelse(c,t,f) ->
+            compile_ifelse(c,t,f,bvar,alpha,label)
+        | _ ->
+            (string(exp) + "%s\n ERROr ^not compile-able^","",label)
+
+compile_ifelse <- fun (c,t,f,bvar,alpha,label) ->
             let start_true = newlabel()
             let start_false = newlabel()
             let (outc,destc,labelc) = comp_llvm(c,bvar,alpha,label)
@@ -135,8 +141,6 @@ let rec comp_llvm  (exp,bvar,alpha,label) =
             let phi = sprintf " = phi i32 [%s, %%%s], [%s, %%%s]\n" destt end_true destf end_false
             output <- output + result + phi
             (output,result,rlbl)
-        | _ -> 
-            (string(exp) + "%s\n ERROr ^not compile-able^","",label)
 
 compile_binop <- fun (op, x, y, bvar, alpha, label) ->
     let (outx,destx,xlabel) = comp_llvm(x,bvar,alpha,label)
