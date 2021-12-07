@@ -132,13 +132,16 @@ class Driver {
         expr t = (expr)Par.Parse(new CalcLexer(srcfile, "EOF"));
         if(t != null) {
             //FSPrint(t);
-            run(t);
+            run(t); //Not required but recommended to
+            //try interpreting simple expressions.
             Console.WriteLine("Result: "+t); 
         }
       }
   }
 }
 ```
+
+The `run(t)` will call the eval function we have for interpreting the Abstract Syntax Tree returned.
 
 ## Compile & Test File
 
@@ -147,11 +150,11 @@ After meeting these prerequisites, you can now use the `compile.sh` script to ru
 ```bash
 ./compile.sh folder
 # ex: ./compile.sh mongoose
-# this command will grab and compile the necessary files mentioned above to compile the ParGen.exe
+# this command will grab and compile the necessary files mentioned above to compile the ASTGenerator.exe
 ```
 
-This will generate `ParGen.exe` which you can run and pass files to to test your language code files.
+This will generate `ASTGenerator.exe` which you can run and pass files to to test your language code files.
 
 ```bash
-mono ParGen.exe ./calculator/test1.calc
+mono ASTGenerator.exe ./calculator/test1.calc
 ```
