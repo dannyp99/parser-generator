@@ -77,19 +77,19 @@ type inst_type =
     | Unknown
 
 let transinst = function
-  | "+" -> (Arith, "add")
-  | "-" -> (Arith, "sub")
-  | "*" -> (Arith, "mul")
-  | "/" -> (Arith, "sdiv")
-  | "%" -> (Arith, "srem")
+  | "+" -> (Arith, "add i32")
+  | "-" -> (Arith, "sub i32")
+  | "*" -> (Arith, "mul i32")
+  | "/" -> (Arith, "sdiv i32")
+  | "%" -> (Arith, "srem i32")
+  | "==" -> (Comparison, "icmp eq i32")
+  | "<" -> (Comparison, "icmp slt i32")
+  | "<=" -> (Comparison, "icmp sle i32")
   (*
-  | "==" -> (Comparison, "icmp eq i32 ")
-  | "<" -> (Comparison, "icmp slt i32 ")
-  | "<=" -> (Comparison, "icmp sle i32 ")
-  *)
   | "==" -> (Comparison, "call i32 @mongoose_eq")
   | "<" -> (Comparison, "call i32 @mongoose_lt")
   | "<=" -> (Comparison, "call i32 @mongoose_leq")
+  *)
   | "^" ->  (Cfunc, "call i32 @mongoose_expt")
   | "=" -> (Cfunc, "call i32 @mongoose_assign")
   | "&&" -> (Cfunc, "call i32 @mongoose_and")
@@ -102,9 +102,6 @@ declare i32 @mongoose_cout_str(i8*)
 declare i32 @mongoose_cin()
 declare i32 @mongoose_expt(i32, i32)
 declare i32 @mongoose_assign(i32*, i32)
-declare i32 @mongoose_lt(i32, i32)
-declare i32 @mongoose_leq(i32, i32)
-declare i32 @mongoose_eq(i32, i32)
 declare i32 @mongoose_or(i32, i32)
 declare i32 @mongoose_and(i32, i32)
 declare i32 @mongoose_not(i32)
@@ -146,20 +143,24 @@ compile_binop <- fun (op, x, y, bvar, alpha, label) ->
     let (outy,desty,ylabel) = comp_llvm(y,bvar,alpha,label)
     let top = transinst(op)
     let mutable output = sprintf "%s%s" outx outy
-    let reg = newreg()
+    let mutable reg = newreg()
     match top with
         | (Arith, opstring) ->
-            output <- output + sprintf "%s = %s i32 %s, %s\n" reg opstring destx desty
+            output <- output + sprintf "%s = %s %s, %s\n" reg opstring destx desty
         | (Cfunc, opstring) ->
             output <- output + sprintf "%s = %s(i32 %s, i32 %s)\n" reg opstring destx desty
         | (Comparison, opstring) ->
-            output <- output + sprintf "%s = %s(i32 %s, i32 %s)\n" reg opstring destx desty
+            let tmp_reg = reg
+            reg <- newreg()
+            output <- output + sprintf "%s = %s %s, %s\n" tmp_reg opstring destx desty
+            output <- output + sprintf "%s = zext i1 %s to i32\n" reg tmp_reg
         | (Unknown, opstring) ->
-            output <- "SAD"
+            output <- "unrecognized binary operator"
     (output,reg,label)
 
-let boilerplate = "source_filename = \"factorial.c\"
-target datalayout = \"e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128\"
+
+
+let boilerplate = "target datalayout = \"e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128\"
 target triple = \"x86_64-pc-linux-gnu\"\n\n"
 
 let top = sprintf "%s\ndefine i32 @main() {\n" includes
