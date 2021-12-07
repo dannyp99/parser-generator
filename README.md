@@ -2,6 +2,8 @@
 
 ## Table of Contents
 
+[Grammar Notes](#grammar-notes)
+
 [Building the Grammar FSM](#building-the-grammar-fsm)
 
 [Your Responsibility](#your-responsibility)
@@ -14,6 +16,14 @@
 - [Main Function](#main-function)
 
 [Compile & Test File](#compile--test-file)
+
+## Grammar Notes
+
+You have the ability to inject code to the top of your FSM file.This is to allow the following:
+
+- Inject additional using statements you may need.
+- Inject a using static FSharpModule that contains you Abstract Syntax Tree.
+- Declare additional classes that you may want or need.
 
 ## Building the Grammar FSM
 
@@ -33,10 +43,14 @@ This will generate the FSM in the par.cs file in the directory argument passed. 
 
 ### F# Abstract Syntax Tree
 
-For the sake of simplicity we allow users to make a discrete union of the types for their Abstract Syntax Tree. **However**, creating one is not always necessary for simple grammars. If your Grammar uses C# types and doesn't need a f# file you are only required to create a f# file with the following code:
+For the sake of simplicity we allow users to make a discrete union of the types for their Abstract Syntax Tree. **However**, creating one is not always necessary for simple grammars. If your Grammar uses C# types and doesn't need a f# file simply don't inject one from the grammar. If you do use one name it the same as the one manual injected from the grammar, i.e.
+
+```txt
+!using static FSModule
+```
 
 ```fsharp
-module FSEvaluator
+module FSModule
 ```
 
 To simplify the importing of F# code we recommend translator functions and for minimal changes an example of calculator is shown below:

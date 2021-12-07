@@ -299,7 +299,8 @@ public class StateMachine
             sw.Write("using System.Collections;\n");
             sw.Write("using System.Collections.Generic;\n");
             sw.Write("using System.Linq;\n");
-            sw.Write("using static FSEvaluator;\n\n");
+            sw.Write(Grammar.Extras);
+            sw.WriteLine();
             sw.Write("class Generator{\n");
 
             string AbstractType = Grammar.AbsynType ?? "object"; // can be replaced w/ object
@@ -366,8 +367,7 @@ public class StateMachine
                 }
             }
             sw.Write("parser1.ReSyncSymbol = \"" + Grammar.ReSync + "\";\n");
-            sw.Write("return parser1;\n}//make_parser\n\n");
-            sw.Write(Grammar.Extras + '\n');
+            sw.Write("return parser1;\n}//make_parser\n");
             sw.Write("} // Generator Class");
 
         } // Using StreamWriter  

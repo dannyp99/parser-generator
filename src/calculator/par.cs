@@ -138,6 +138,4 @@ parser1.RSM[26].Add("+",new Reduce(5));
 parser1.ReSyncSymbol = "EOF";
 return parser1;
 }//make_parser
-
-
 } // Generator Class

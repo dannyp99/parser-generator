@@ -1,5 +1,10 @@
 # LR(1) grammar (ambiguous) for Mongoose 0.2
-
+# This code will be injected verbatum.
+!using static FSEvaluator;
+!
+!public static class Counter {
+!   public static int counter = 0;   
+!}
 nonterminal E expr
 nonterminal ES expr
 terminal + - * / % ^ ( ) COLON = < <= == . ; && || ! 
