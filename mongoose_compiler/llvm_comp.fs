@@ -119,23 +119,23 @@ let rec comp_llvm  (exp,bvar,alpha,label) =
         | Binop(op,x,y) ->
             compile_binop(op, x, y, bvar, alpha, label)
         | Ifelse(c,t,f) ->
-            let tlbl = newlabel()
-            let flbl = newlabel()
+            let start_true = newlabel()
+            let start_false = newlabel()
             let (outc,destc,labelc) = comp_llvm(c,bvar,alpha,label)
-            let (outt,destt,labelt) = comp_llvm(t,bvar,alpha,tlbl)
-            let (outf,destf,labelf) = comp_llvm(f,bvar,alpha,flbl)
+            let (outt,destt,end_true) = comp_llvm(t,bvar,alpha,start_true)
+            let (outf,destf,end_false) = comp_llvm(f,bvar,alpha,start_false)
             let comparereg = newreg()
             let result = newreg()
             let rlbl = newlabel()
             let mutable output = outc
             output <- output + sprintf "%s = icmp sgt i32 %s, 0\n" comparereg destc
-            output <- output + sprintf "br i1 %s, label %%%s, label %%%s\n" comparereg tlbl flbl
-            output <- output + sprintf "\n%s:\n%s" tlbl outt
+            output <- output + sprintf "br i1 %s, label %%%s, label %%%s\n" comparereg start_true start_false
+            output <- output + sprintf "\n%s:\n%s" start_true outt
             output <- output + sprintf "br label %%%s\n" rlbl
-            output <- output + sprintf "\n%s:\n%s" flbl outf
+            output <- output + sprintf "\n%s:\n%s" start_false outf
             output <- output + sprintf "br label %%%s\n" rlbl
             output <- output + sprintf "\n%s:\n" rlbl
-            let phi = sprintf " = phi i32 [%s, %%%s], [%s, %%%s]\n" destt labelt destf labelf
+            let phi = sprintf " = phi i32 [%s, %%%s], [%s, %%%s]\n" destt end_true destf end_false
             output <- output + result + phi
             (output,result,rlbl)
         | _ -> 
