@@ -85,18 +85,13 @@ let transinst = function
   | "==" -> (Comparison, "icmp eq i32")
   | "<" -> (Comparison, "icmp slt i32")
   | "<=" -> (Comparison, "icmp sle i32")
-  (*
-  | "==" -> (Comparison, "call i32 @mongoose_eq")
-  | "<" -> (Comparison, "call i32 @mongoose_lt")
-  | "<=" -> (Comparison, "call i32 @mongoose_leq")
-  *)
   | "^" ->  (Cfunc, "call i32 @mongoose_expt")
   | "=" -> (Cfunc, "call i32 @mongoose_assign")
   | "&&" -> (Cfunc, "call i32 @mongoose_and")
   | "||" -> (Cfunc, "call i32 @mongoose_or")
   | x -> (Unknown, x);;
 
-let includes = "declare i32 @putchar(i32)
+let includes = "\
 declare i32 @mongoose_cout_expr(i32)
 declare i32 @mongoose_cout_str(i8*)
 declare i32 @mongoose_cin()
@@ -105,7 +100,11 @@ declare i32 @mongoose_assign(i32*, i32)
 declare i32 @mongoose_or(i32, i32)
 declare i32 @mongoose_and(i32, i32)
 declare i32 @mongoose_not(i32)
-declare i32 @mongoose_neg(i32)\n"
+declare i32 @mongoose_neg(i32)
+
+declare i32 @putchar(i32)
+declare i32 @printf(i8*,...)
+@out_expr.s = constant [3 x i8] c\"%d\\00\"\n"
 
 let mutable compile_binop = fun (op,x,y,bvar,alpha,label) -> ("","","")
 let mutable compile_ifelse = fun (c,t,f,bvar,alpha,label) -> ("","","")
@@ -115,7 +114,7 @@ let rec comp_llvm  (exp,bvar,alpha,label) =
         | Val(n) ->
             ("",string(n),label)
         | Binop(op,x,y) ->
-            compile_binop(op, x, y, bvar, alpha, label)
+            compile_binop(op,x,y,bvar,alpha,label)
         | Ifelse(c,t,f) ->
             compile_ifelse(c,t,f,bvar,alpha,label)
         | _ ->
@@ -184,6 +183,8 @@ let compile (tree:expr) =
     let res = comp_llvm (tree, "", "", "")
     match res with
         | (code,res,label) ->
-            let print = sprintf "call i32 @mongoose_cout_expr(i32 %s)\ncall i32 @putchar(i32 10)\n" res
+            let print = sprintf "call i32 (i8*,...)\
+                @printf(i8* getelementptr ([3 x i8], [3 x i8]* @out_expr.s, i64 0, i64 0), i32 %s)\n\
+                call i32 @putchar(i32 10)\n" res
             let output = sprintf "%s%s%s\n%s%s" boilerplate top code print bot
             output
