@@ -1,11 +1,9 @@
 #!/usr/bin/env sh
 
-rm -rf run
-mkdir run
+rm -f run/*
+mkdir -p run
 
-( cd ../; fsharpc -a llvm_comp.fs )
-mv ../llvm_comp.dll run
-mv ../FSharp.Core.dll run
+fsharpc -a ../llvm_comp.fs -o run/llvm_comp.dll
 
 cp ../../src/lexer.dll run
 cp ../../src/Generate.dll run
