@@ -70,20 +70,31 @@ let newlabel () =
     lcx <- lcx + 1
     "l" + string(lcx)
 
+type inst_type =
+    | Cfunc
+    | Comparison
+    | Arith
+    | Unknown
+
 let transinst = function
-  | "+" -> "add"
-  | "-" -> "sub"
-  | "*" -> "mul"
-  | "/" -> "sdiv"
-  | "%" -> "srem"
-  | "^" ->  "call i32 @mongoose_expt"
-  | "=" -> "call i32 @mongoose_assign"
-  | "==" -> "call i32 @mongoose_eq"
-  | "<" -> "call i32 @mongoose_lt"
-  | "<=" -> "call i32 @mongoose_leq"
-  | "&&" -> "call i32 @mongoose_and"
-  | "||" -> "call i32 @mongoose_or"
-  | x -> x;;
+  | "+" -> (Arith, "add")
+  | "-" -> (Arith, "sub")
+  | "*" -> (Arith, "mul")
+  | "/" -> (Arith, "sdiv")
+  | "%" -> (Arith, "srem")
+  (*
+  | "==" -> (Comparison, "icmp eq i32 ")
+  | "<" -> (Comparison, "icmp slt i32 ")
+  | "<=" -> (Comparison, "icmp sle i32 ")
+  *)
+  | "==" -> (Comparison, "call i32 @mongoose_eq")
+  | "<" -> (Comparison, "call i32 @mongoose_lt")
+  | "<=" -> (Comparison, "call i32 @mongoose_leq")
+  | "^" ->  (Cfunc, "call i32 @mongoose_expt")
+  | "=" -> (Cfunc, "call i32 @mongoose_assign")
+  | "&&" -> (Cfunc, "call i32 @mongoose_and")
+  | "||" -> (Cfunc, "call i32 @mongoose_or")
+  | x -> (Unknown, x);;
 
 let includes = "declare i32 @putchar(i32)
 declare i32 @mongoose_cout_expr(i32)
@@ -99,22 +110,14 @@ declare i32 @mongoose_and(i32, i32)
 declare i32 @mongoose_not(i32)
 declare i32 @mongoose_neg(i32)\n"
 
+let mutable compile_binop = fun (op,x,y,bvar,alpha,label) -> ("","","")
+
 let rec comp_llvm  (exp,bvar,alpha,label) =
     match exp with
         | Val(n) ->
             ("",string(n),label)
         | Binop(op,x,y) ->
-            let (outx,destx,xlabel) = comp_llvm(x,bvar,alpha,label)
-            let (outy,desty,ylabel) = comp_llvm(y,bvar,alpha,label)
-            let top = transinst(op)
-            let mutable output = sprintf "%s%s" outx outy
-            let reg = newreg()
-            match top.[0] with
-                | 'c' ->
-                    output <- output + sprintf "%s = %s(i32 %s, i32 %s)\n" reg top destx desty
-                | _ ->
-                    output <- output + sprintf "%s = %s i32 %s, %s\n" reg top destx desty
-            (output,reg,label)
+            compile_binop(op, x, y, bvar, alpha, label)
         | Ifelse(c,t,f) ->
             let tlbl = newlabel()
             let flbl = newlabel()
@@ -137,6 +140,23 @@ let rec comp_llvm  (exp,bvar,alpha,label) =
             (output,result,rlbl)
         | _ -> 
             (string(exp) + "%s\n ERROr ^not compile-able^","",label)
+
+compile_binop <- fun (op, x, y, bvar, alpha, label) ->
+    let (outx,destx,xlabel) = comp_llvm(x,bvar,alpha,label)
+    let (outy,desty,ylabel) = comp_llvm(y,bvar,alpha,label)
+    let top = transinst(op)
+    let mutable output = sprintf "%s%s" outx outy
+    let reg = newreg()
+    match top with
+        | (Arith, opstring) ->
+            output <- output + sprintf "%s = %s i32 %s, %s\n" reg opstring destx desty
+        | (Cfunc, opstring) ->
+            output <- output + sprintf "%s = %s(i32 %s, i32 %s)\n" reg opstring destx desty
+        | (Comparison, opstring) ->
+            output <- output + sprintf "%s = %s(i32 %s, i32 %s)\n" reg opstring destx desty
+        | (Unknown, opstring) ->
+            output <- "SAD"
+    (output,reg,label)
 
 let boilerplate = "source_filename = \"factorial.c\"
 target datalayout = \"e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128\"
