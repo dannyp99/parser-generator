@@ -10,6 +10,8 @@
 
 - [F# Abstract Syntax Tree](#f-abstract-syntax-tree)
 
+- [Grammar Semantic Action](grammar-semantic-action)
+
 - [Lexical Analyzer](#lexical-analyzer)
   - [Token Types](#token-types)
 
@@ -71,6 +73,23 @@ let NewDivide(a,b) = Divide(a,b);
 let NewExpt(a,b) = Expt(a,b);
 let NewUminus(a) = Uminus(a);;
 ```
+### Grammar Semantic Action
+
+As you work to create your own grammar for your language you will need to give the parser actions to perform when it encounters your reductions rules. To formulate your actions, refer back your F# code for your abstract sytax tree and see what code your productions will use to create its parse trees. Below are two productions from the basic calculator grammar:
+
+```txt
+E --> int:n { return n; }
+E --> E:e1 + E:e2 { return NewPlus(e1,e2); }
+```
+The code within the curly braces will be added to the reduction rules performed by the generated parser. These actions are crutical as they are the building blocks for the parse tree. Think about what the code should be creating to reflect the reduction rules at each step. The reductions for the above grammar productions are represented as code in the parser as:
+
+```csharp
+rule.RuleAction = (pstack) => {expr n = (expr)pstack.Pop().Value; return n; };
+```
+```csharp
+rule.RuleAction = (pstack) => {expr e2 = (expr)pstack.Pop().Value; pstack.Pop();  expr e1 = (expr)pstack.Pop().Value; return NewPlus(e1,e2); };
+```
+Note: per the grammar, 'int' in the first rule refers to a typed terminal of type expr and is not to be confused with the c# primitive int. Notice also that the given semantic actions are the last statements for each of these rules.
 
 ### Lexical Analyzer
 
