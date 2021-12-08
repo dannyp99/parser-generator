@@ -3,6 +3,9 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using static FSEvaluator;
+public static class Counter {
+   public static int counter = 0;   
+}
 
 class Generator{
 public static Parser<object> make_parser()
@@ -6305,6 +6308,4 @@ parser1.RSM[459].Add("Val",new Reduce(20));
 parser1.ReSyncSymbol = "EOF";
 return parser1;
 }//make_parser
-
-
 } // Generator Class

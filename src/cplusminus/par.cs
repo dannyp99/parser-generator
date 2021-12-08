@@ -2,7 +2,16 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using static FSEvaluator;
+// Needs to be compiled with both .dlls (all .dlls?)
+//using System;
+// Do we even need this? I don't know if it fits into how we are doing things
+//public static void Main(string[] argv]) {
+   //Console.WriteLine("Write something in C+- : "); // Changed
+   //string input = Console.ReadLine();  // Changed
+   //simpleLexer lexer1 =  new simpleLexer(srcfile, "EOF"); // Changed
+   //Parser<object> parser = Generator.make_parser(); // Changed
+   //parser1.parse(lexer1); // Changed
+//}//main
 
 class Generator{
 public static Parser<string> make_parser()
@@ -125,16 +134,4 @@ parser1.RSM[33].Add(")",new Reduce(7));
 parser1.ReSyncSymbol = ";";
 return parser1;
 }//make_parser
-
-// Needs to be compiled with both .dlls (all .dlls?)
-//using System;
-// Do we even need this? I don't know if it fits into how we are doing things
-//public static void Main(string[] argv]) {
-   //Console.WriteLine("Write something in C+- : "); // Changed
-   //string input = Console.ReadLine();  // Changed
-   //simpleLexer lexer1 =  new simpleLexer(srcfile, "EOF"); // Changed
-   //Parser<object> parser = Generator.make_parser(); // Changed
-   //parser1.parse(lexer1); // Changed
-//}//main
-
 } // Generator Class

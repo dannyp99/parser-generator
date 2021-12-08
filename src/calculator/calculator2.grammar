@@ -1,5 +1,5 @@
 # ambiguous grammar for online calculator
-
+!using static FSEvaluator;
 nonterminal E expr
 terminal + - * ( )
 typedterminal int expr
