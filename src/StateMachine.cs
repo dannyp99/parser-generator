@@ -314,7 +314,9 @@ public class StateMachine
                     Console.WriteLine(Grammar.Rules.Count);
                 }
                 sw.Write("rule = new RGrule(\"{0}\");\n",Grammar.Rules[i].Lhs.Sym);
-                sw.Write("rule.RuleAction = (pstack) => { Console.WriteLine("+i+");");
+                if(TRACE) {
+                  sw.Write("rule.RuleAction = (pstack) => { Console.WriteLine("+i+");");
+                }
                 int k = Grammar.Rules[i].Rhs.Count;
                 while(k>0) {
                     GrammarSym gsym = Grammar.Rules[i].Rhs[k-1];
