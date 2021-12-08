@@ -66,7 +66,7 @@ public class Parser<Object>
 //absLexer
     public object Parse(absLexer tokenizer) //used to be simpleLexer, GrammarLexer conversion
     {
-        bool TRACE = true;
+        bool TRACE = false;
         //1 absLexer abstractLex = new concreteLexer();
         object result = default(object);
         Stack<StackElement<object>> stack = new Stack<StackElement<object>>(8*1024);

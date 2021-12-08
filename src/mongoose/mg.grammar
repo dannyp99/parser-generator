@@ -15,7 +15,7 @@ typedterminal Str string
 topsym E
 
 # only proper operators should need precedence declarations
-
+# Add in !commands so that the code can be injected into the par.cs
 left + 200
 left - 300
 left * 400
