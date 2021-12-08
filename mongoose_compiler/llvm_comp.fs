@@ -33,16 +33,13 @@ let NewAssign(s,exp) = Assign(s,exp);
 let NewSym(s) = Sym(s);
 let NewFSNothing = Nothing; 
 
-type bvar = (string*int)
-
-type alphamap = (string * string) //what 1s th1s
 
 let mutable counter = 0
 let mutable lcx = 0  // alpha counter for register names
 
-let defs: string list = []
+let mutable defs: string list = []
 
-let symtable  = []
+let mutable symtable  = Map.empty<string, string list>
 
 let newreg () =
   lcx <- lcx + 1
@@ -51,6 +48,10 @@ let newreg () =
 let newlabel () =
   lcx <- lcx + 1
   "l" + string(lcx)
+  
+let aConvert (x:string) =
+  counter <- counter + 1
+  "%" + x + string(counter)
 
 type inst_type =
   | Cfunc
@@ -90,15 +91,37 @@ declare i32 @printf(i8*,...)
 
 let mutable compile_binop = fun (op,x,y,bvar,alpha,label) -> ("","","")
 let mutable compile_ifelse = fun (c,t,f,bvar,alpha,label) -> ("","","")
+let mutable compile_let = fun (c,t,f,bvar,alpha,label) -> ("","","")
 
-let rec comp_llvm  (exp,bvar,alpha,label) =
+let rec comp_llvm  (exp, bvar: string list, alpha:Map<string, string>,label) =
   match exp with
     | Val(n) ->
       ("",string(n),label)
+    | Var(n) ->
+      let mutable output = sprintf "Error, %s not defined" n
+      let reg = newreg()
+      if alpha.ContainsKey(n) then
+        let avar = alpha.[n]
+        output <- sprintf "%s = load i32, i32* %s, align 4\n" reg avar
+      (output,reg,label)
     | Binop(op,x,y) ->
       compile_binop(op,x,y,bvar,alpha,label)
     | Ifelse(c,t,f) ->
       compile_ifelse(c,t,f,bvar,alpha,label)
+    | Letexp(var,expr,next) -> //not lambda's
+      compile_let(var, expr, next,bvar,alpha,label)
+    | Assign(var, v) ->
+      let (outv,destv,labelv) = comp_llvm(v,bvar,alpha,label)
+      let mutable output = sprintf "Error, %s not defined" var
+      if alpha.ContainsKey(var) then
+        let avar = alpha.[var]
+        output <- outv + sprintf "store i32 %s, i32* %%%s, align 4\n" destv var
+      (output,destv,labelv)
+    | Seq(exprs) ->
+      let mutable result = ("","","")
+      for e in exprs do
+        result <- comp_llvm(e,bvar,alpha,label)
+      result
     | _ ->
       (string(exp) + "%s\n ERROr ^not compile-able^","",label)
 
@@ -130,20 +153,49 @@ compile_binop <- fun (op, x, y, bvar, alpha, label) ->
   let mutable output = sprintf "%s%s" outx outy
   let mutable reg = newreg()
   match top with
-	  | (Arith, opstring) ->
+    | (Arith, opstring) ->
       output <- output + sprintf "%s = %s %s, %s\n" reg opstring destx desty
-	  | (Cfunc, opstring) ->
+    | (Cfunc, opstring) ->
       output <- output + sprintf "%s = %s(i32 %s, i32 %s)\n" reg opstring destx desty
-	  | (Comparison, opstring) ->
+    | (Comparison, opstring) ->
       let tmp_reg = reg
       reg <- newreg()
       output <- output + sprintf "%s = %s %s, %s\n" tmp_reg opstring destx desty
       output <- output + sprintf "%s = zext i1 %s to i32\n" reg tmp_reg
-	  | (Unknown, opstring) ->
+    | (Unknown, opstring) ->
       output <- "unrecognized binary operator"
   (output,reg,label)
 
 
+
+compile_let <- fun (var, expr, next, bvar:string list, alpha, label) ->
+  match expr with
+      | Lambda(farg,body) ->
+      (* totally unsure if works
+        symtable <- symtable.Add(var,bvar) //add func name to symtable with its bvars (rec)
+        let bvarnew = (bvar) @ [farg] //add local lamba term to bvars
+        let (outb,destb,labelb) = comp_llvm(body,bvarnew,alpha,label) //compile body
+        let mutable prms = ""
+        for b in bvar do //cycle thru bvars and add them as params
+          prms <- prms + ", i32* " + b
+        let header = sprintf "define i32 @%s(i32 %%farg_%s%s) {{" var farg prms
+        let mutable sfarg = sprintf "%%%s = alloca i32, align 4\n" farg
+        sfarg <- sfarg + sprintf "store i32 %%farg_%s, i32 %s, align 4\n" farg farg //FORMAL PARAM‚add it as itself so that body recognizes it
+        let func = header + sfarg + outb + sprintf "ret i32 %s\n" destb
+        defs <- (defs) @ [func]
+        comp_llvm(next,bvar,alpha,label) *)
+        ("lambda not supported dude","","")
+      | _ ->
+        let mutable avar = "%" + var
+        if alpha.ContainsKey(avar) then 
+          avar <- aConvert(var)
+        //let (outc,destv,labelv) = comp_llvm(var,bvar,alpha,label)
+        let (outexp,destexp,labelexp) = comp_llvm(expr,bvar,alpha,label) //let int
+        let output = sprintf "%s = alloca i32, align 4\nstore i32 %s, i32* %s, align 4\n" avar destexp avar
+        let alphanew = alpha.Add(var,avar)
+        let bvarnew = (bvar) @ [avar]
+        let (outn,destn,labeln) = comp_llvm(next,bvarnew,alphanew,labelexp)
+        (output + outn,destn,labeln)
 
 let boilerplate = "target datalayout = \"e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128\"
 target triple = \"x86_64-pc-linux-gnu\"\n\n"
@@ -160,13 +212,25 @@ let bot = "ret i32 0\n}"
 )
 *)
 // let tree = Ifelse (Binop ("*", Binop ("-", Binop ("+", Val 5, Val 6), Val 1), Val 1), Ifelse (Val 0, Val 7, Val 8), Val 9)
+(* 
+let x = 3: (x + x)
+*)
+
+//let tree = Letexp("x", Val 3, Binop("+", Var "x", Var "x"))
+let y = Var "y" //fsharp no likey tree
+let tree = Letexp("y", Val 0, Letexp("x", Val 2, Assign("y", Binop("+", y, Val 1)) ) )
 
 let compile (tree:expr) =
-  let res = comp_llvm (tree, "", "", "")
+  let alphamap = Map.empty<string, string>
+
+  let res = comp_llvm (tree, [], alphamap, "")
+  
   match res with
     | (code,res,label) ->
       let print = sprintf "call i32 (i8*,...)\
         @printf(i8* getelementptr ([3 x i8], [3 x i8]* @out_expr.s, i64 0, i64 0), i32 %s)\n\
         call i32 @putchar(i32 10)\n" res
       let output = sprintf "%s%s%s\n%s%s" boilerplate top code print bot
-      output
+      printf "%s" output
+      
+compile(tree)
