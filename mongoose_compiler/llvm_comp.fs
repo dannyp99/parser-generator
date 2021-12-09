@@ -7,7 +7,9 @@ type environ = (string*expr ref) list
     override this.ToString() = 
       match this with 
         | Val(i) -> "Val(" + i.ToString() + ")"
-        | Str(s) | Var(s) | Sym(s) -> s
+        | Str(s) -> "Str(" + s + ")"
+        | Var(s) -> "Var(" + s + ")"
+        | Sym(s) -> "Sym(" + s + ")"
         | Binop(s,e1,e2) -> "Binop(" + s + ", " + e1.ToString() + ", " + e2.ToString() + " )"
         | Uniop(s,e) -> "Uniop(" + s + ", " + e.ToString() + " )"
         | Ifelse(e1,e2,e3) -> "Ifelse(" + e1.ToString() + ", " + e2.ToString() + ", " + e3.ToString() + " )"
@@ -36,6 +38,7 @@ let NewFSNothing = Nothing;
 
 let mutable counter = 0
 let mutable lcx = 0  // alpha counter for register names
+let mutable strx = 0 // counter for global strings
 
 let mutable defs: string list = []
 
@@ -48,6 +51,10 @@ let newreg () =
 let newlabel () =
   lcx <- lcx + 1
   "l" + string(lcx)
+
+let newstring () =
+  strx <- strx + 1
+  "@str." + string(strx)
   
 let aConvert (x:string) =
   counter <- counter + 1
@@ -87,9 +94,12 @@ declare i32 @mongoose_neg(i32)
 
 declare i32 @putchar(i32)
 declare i32 @printf(i8*,...)
-@out_expr.s = constant [3 x i8] c\"%d\\00\"\n"
+declare i32 @puts(i8*)
+@out_expr.s = constant [3 x i8] c\"%d\\00\"
+@out_str.s = constant [3 x i8] c\"%s\\00\"\n"
 
 let mutable compile_binop = fun (op,x,y,bvar,alpha,label) -> ("","","")
+let mutable compile_uniop = fun (op,x,bvar,alpha,label) -> ("","","")
 let mutable compile_ifelse = fun (c,t,f,bvar,alpha,label) -> ("","","")
 let mutable compile_let = fun (c,t,f,bvar,alpha,label) -> ("","","")
 
@@ -98,7 +108,7 @@ let rec comp_llvm  (exp, bvar: string list, alpha:Map<string, string>,label) =
     | Val(n) ->
       ("",string(n),label)
     | Var(n) ->
-      let mutable output = sprintf "Error, %s not defined" n
+      let mutable output = sprintf "Error, variable %s does not exist in this scope\n" n
       let reg = newreg()
       if alpha.ContainsKey(n) then
         let avar = alpha.[n]
@@ -106,6 +116,8 @@ let rec comp_llvm  (exp, bvar: string list, alpha:Map<string, string>,label) =
       (output,reg,label)
     | Binop(op,x,y) ->
       compile_binop(op,x,y,bvar,alpha,label)
+    | Uniop(op,x) ->
+      compile_uniop(op,x,bvar,alpha,label)
     | Ifelse(c,t,f) ->
       compile_ifelse(c,t,f,bvar,alpha,label)
     | Letexp(var,expr,next) -> //not lambda's
@@ -117,13 +129,15 @@ let rec comp_llvm  (exp, bvar: string list, alpha:Map<string, string>,label) =
         let avar = alpha.[var]
         output <- outv + sprintf "store i32 %s, i32* %%%s, align 4\n" destv var
       (output,destv,labelv)
-    | Seq(exprs) ->
-      let mutable result = ("","","")
-      for e in exprs do
-        result <- comp_llvm(e,bvar,alpha,label)
-      result
+    | Seq(head :: [Nothing]) ->
+      comp_llvm(head,bvar,alpha,label)
+    | Seq(head :: [tail]) ->
+      let (outh,desth,labelh) = comp_llvm(head,bvar,alpha,label)
+      let (outt,destt,labelt) = comp_llvm(tail,bvar,alpha,label)
+      let output = outh + outt
+      (output,destt,labelt)
     | _ ->
-      (string(exp) + "%s\n ERROr ^not compile-able^","",label)
+      (string(exp) + "\n ERROr ^not compile-able^\n","",label)
 
 compile_ifelse <- fun (c,t,f,bvar,alpha,label) ->
   let start_true = newlabel()
@@ -166,7 +180,36 @@ compile_binop <- fun (op, x, y, bvar, alpha, label) ->
       output <- "unrecognized binary operator"
   (output,reg,label)
 
-
+compile_uniop <- fun (op, x, bvar, alpha, label) ->
+  let (outx,destx,xlabel) =
+    match x with
+      | Sym(s) ->
+        ("","",label)
+      | _ ->
+        comp_llvm(x,bvar,alpha,label)
+  let mutable output = outx
+  let reg = newreg()
+  match (op,x) with
+    | ("COUT",Sym(s)) ->
+      // FIXME proper string escaping
+      let mutable str = s.[1..s.Length-2]
+      let strname = newstring();
+      // gross hack to get right length when string contains backslash escapes
+      let strlen = str.Length - (Seq.length (Seq.filter ((=) '\\') str)) + 1
+      str <- str.Replace("\\n","\\0A")
+      defs <- (sprintf "%s = constant [%d x i8] c\"%s\00\"\n" strname strlen str) :: defs
+      // can't use puts, appends newline
+      //output <- output + sprintf "call i32 (i8*)\
+      //  @puts(i8* getelementptr ([%d x i8], [%d x i8]* %s, i64 0, i64 0))\n" strlen strlen strname
+      output <- output + sprintf "call i32 (i8*,...)\
+        @printf(i8* getelementptr ([3 x i8], [3 x i8]* @out_str.s, i64 0, i64 0), i8* getelementptr ([%d x i8], [%d x i8]* %s, i64 0, i64 0))\n" strlen strlen strname
+      (output,"0",label)
+    | ("COUT",Val(n)) ->
+      output <- output + sprintf "call i32 (i8*,...)\
+        @printf(i8* getelementptr ([3 x i8], [3 x i8]* @out_expr.s, i64 0, i64 0), i32 %d)\n" n
+      (output,"0",label)
+    | _ ->
+      (sprintf "uniop %s not implemented\n" op, "0", label)
 
 compile_let <- fun (var, expr, next, bvar:string list, alpha, label) ->
   match expr with
@@ -187,7 +230,7 @@ compile_let <- fun (var, expr, next, bvar:string list, alpha, label) ->
         ("lambda not supported dude","","")
       | _ ->
         let mutable avar = "%" + var
-        if alpha.ContainsKey(avar) then 
+        if alpha.ContainsKey(var) then 
           avar <- aConvert(var)
         //let (outc,destv,labelv) = comp_llvm(var,bvar,alpha,label)
         let (outexp,destexp,labelexp) = comp_llvm(expr,bvar,alpha,label) //let int
@@ -200,7 +243,6 @@ compile_let <- fun (var, expr, next, bvar:string list, alpha, label) ->
 let boilerplate = "target datalayout = \"e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128\"
 target triple = \"x86_64-pc-linux-gnu\"\n\n"
 
-let top = sprintf "%s\ndefine i32 @main() {\n" includes
 let bot = "ret i32 0\n}"
 
 (*
@@ -221,9 +263,12 @@ let x = 3: (x + x)
 //let tree = Letexp("y", Val 0, Letexp("x", Val 2, Assign("y", Binop("+", y, Val 1)) ) )
 
 let compile (tree:expr) =
+  printfn "%s" (string tree)
   let alphamap = Map.empty<string, string>
 
   let res = comp_llvm (tree, [], alphamap, "")
+
+  let top = sprintf "%s\n%s\ndefine i32 @main() {\n" includes (String.concat "" (List.rev defs))
   
   match res with
     | (code,res,label) ->
