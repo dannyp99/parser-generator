@@ -217,8 +217,8 @@ let x = 3: (x + x)
 *)
 
 //let tree = Letexp("x", Val 3, Binop("+", Var "x", Var "x"))
-let y = Var "y" //fsharp no likey tree
-let tree = Letexp("y", Val 0, Letexp("x", Val 2, Assign("y", Binop("+", y, Val 1)) ) )
+//let y = Var "y" //fsharp no likey tree
+//let tree = Letexp("y", Val 0, Letexp("x", Val 2, Assign("y", Binop("+", y, Val 1)) ) )
 
 let compile (tree:expr) =
   let alphamap = Map.empty<string, string>
@@ -231,6 +231,4 @@ let compile (tree:expr) =
         @printf(i8* getelementptr ([3 x i8], [3 x i8]* @out_expr.s, i64 0, i64 0), i32 %s)\n\
         call i32 @putchar(i32 10)\n" res
       let output = sprintf "%s%s%s\n%s%s" boilerplate top code print bot
-      printf "%s" output
-      
-compile(tree)
+      output
