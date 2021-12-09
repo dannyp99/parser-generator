@@ -82,16 +82,6 @@ let transinst = function
   | x -> (Unknown, x);;
 
 let includes = "\
-declare i32 @mongoose_cout_expr(i32)
-declare i32 @mongoose_cout_str(i8*)
-declare i32 @mongoose_cin()
-declare i32 @mongoose_expt(i32, i32)
-declare i32 @mongoose_assign(i32*, i32)
-declare i32 @mongoose_or(i32, i32)
-declare i32 @mongoose_and(i32, i32)
-declare i32 @mongoose_not(i32)
-declare i32 @mongoose_neg(i32)
-
 declare i32 @putchar(i32)
 declare i32 @printf(i8*,...)
 declare i32 @puts(i8*)
@@ -188,7 +178,6 @@ compile_uniop <- fun (op, x, bvar, alpha, label) ->
       | _ ->
         comp_llvm(x,bvar,alpha,label)
   let mutable output = outx
-  let reg = newreg()
   match (op,x) with
     | ("COUT",Sym(s)) ->
       // FIXME proper string escaping
@@ -203,13 +192,23 @@ compile_uniop <- fun (op, x, bvar, alpha, label) ->
       //  @puts(i8* getelementptr ([%d x i8], [%d x i8]* %s, i64 0, i64 0))\n" strlen strlen strname
       output <- output + sprintf "call i32 (i8*,...)\
         @printf(i8* getelementptr ([3 x i8], [3 x i8]* @out_str.s, i64 0, i64 0), i8* getelementptr ([%d x i8], [%d x i8]* %s, i64 0, i64 0))\n" strlen strlen strname
-      (output,"0",label)
-    | ("COUT",Val(n)) ->
+      (output,"0",xlabel)
+    | ("COUT",n) ->
       output <- output + sprintf "call i32 (i8*,...)\
-        @printf(i8* getelementptr ([3 x i8], [3 x i8]* @out_expr.s, i64 0, i64 0), i32 %d)\n" n
-      (output,"0",label)
+        @printf(i8* getelementptr ([3 x i8], [3 x i8]* @out_expr.s, i64 0, i64 0), i32 %s)\n" destx
+      (output,"0",xlabel)
+    | ("-", n) ->
+      let reg = newreg()
+      output <- output + sprintf "%s = sub i32 0, %s\n" reg destx
+      (output,reg,xlabel)
+    | ("!", n) ->
+      let cmp_reg = newreg()
+      let ret_reg = newreg()
+      output <- output + sprintf "%s = icmp eq i32 0, %s\n" cmp_reg destx
+      output <- output + sprintf "%s = zext i1 %s to i32\n" ret_reg cmp_reg
+      (output,ret_reg,xlabel)
     | _ ->
-      (sprintf "uniop %s not implemented\n" op, "0", label)
+      (sprintf "uniop %s not implemented\n" op, "0", xlabel)
 
 compile_let <- fun (var, expr, next, bvar:string list, alpha, label) ->
   match expr with
