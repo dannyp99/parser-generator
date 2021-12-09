@@ -315,9 +315,7 @@ public class StateMachine
                     Console.WriteLine(Grammar.Rules.Count);
                 }
                 sw.Write("rule = new RGrule(\"{0}\");\n",Grammar.Rules[i].Lhs.Sym);
-                if(TRACE) {
-                  sw.Write("rule.RuleAction = (pstack) => { Console.WriteLine("+i+");");
-                }
+                sw.Write("rule.RuleAction = (pstack) => { ");
                 int k = Grammar.Rules[i].Rhs.Count;
                 while(k>0) {
                     GrammarSym gsym = Grammar.Rules[i].Rhs[k-1];
@@ -325,7 +323,7 @@ public class StateMachine
                         if(TRACE){
                             Console.WriteLine("GrammarSymbol --> "+gsym.Sym+"("+gsym.FsharpType+")" + gsym.Label);
                         }
-                        sw.Write(" {0} {1} = ({0})pstack.Pop().Value; ",  gsym.FsharpType, gsym.Label);
+                        sw.Write("{0} {1} = ({0})pstack.Pop().Value; ",  gsym.FsharpType, gsym.Label);
                     }
                     else {
                         sw.Write("pstack.Pop(); ");
@@ -361,10 +359,10 @@ public class StateMachine
                 var row = FSM[i];
                 foreach(var key in row.Keys) {
                     if(row[key] is Accept) {
-                        sw.Write(String.Format("parser1.RSM[{0}].Add(\"{1}\",new {2}());\n",i,key,row[key]));
+                        sw.Write(String.Format("parser1.RSM[{0}].Add(\"{1}\", new {2}());\n",i,key,row[key]));
                     }
                     else { 
-                        sw.Write(String.Format("parser1.RSM[{0}].Add(\"{1}\",new {2}({3}));\n",i,key,row[key],row[key].Next));
+                        sw.Write(String.Format("parser1.RSM[{0}].Add(\"{1}\", new {2}({3}));\n",i,key,row[key],row[key].Next));
                     }
                 }
             }

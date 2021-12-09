@@ -3,7 +3,7 @@
 !using static FSEvaluator;
 !
 !public static class Counter {
-!   public static int counter = 0;   
+!   public static int counter = 0;
 !}
 nonterminal E expr
 nonterminal ES expr

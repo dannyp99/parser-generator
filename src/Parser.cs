@@ -152,7 +152,7 @@ public class Parser<Object>
                   }
                   if (lookahead!=null) {//1nextoken!=null) {
                     //1 lookahead = abstractLex.translate_token(nextoken);
-                    Console.WriteLine("Token after translation " + lookahead.token_type);
+                    //Console.WriteLine("Token after translation " + lookahead.token_type);
                     if(TRACE) {
                         Console.WriteLine("*** translated nextoken: " + lookahead);
                     }
