@@ -84,13 +84,13 @@ let transinst = function
 let includes = "\
 declare i32 @putchar(i32)
 declare i32 @printf(i8*,...)
-declare i32 @puts(i8*)
 @out_expr.s = constant [3 x i8] c\"%d\\00\"
 @out_str.s = constant [3 x i8] c\"%s\\00\"\n"
 
+let mutable compile_while = fun (c,b,bvar,alpha,label) -> ("","","")
+let mutable compile_ifelse = fun (c,t,f,bvar,alpha,label) -> ("","","")
 let mutable compile_binop = fun (op,x,y,bvar,alpha,label) -> ("","","")
 let mutable compile_uniop = fun (op,x,bvar,alpha,label) -> ("","","")
-let mutable compile_ifelse = fun (c,t,f,bvar,alpha,label) -> ("","","")
 let mutable compile_let = fun (c,t,f,bvar,alpha,label) -> ("","","")
 
 let rec comp_llvm  (exp, bvar: string list, alpha:Map<string, string>,label) =
@@ -104,6 +104,8 @@ let rec comp_llvm  (exp, bvar: string list, alpha:Map<string, string>,label) =
         let avar = alpha.[n]
         output <- sprintf "%s = load i32, i32* %s, align 4\n" reg avar
       (output,reg,label)
+    | Binop("while",c,b) ->
+      compile_while(c,b,bvar,alpha,label)
     | Binop(op,x,y) ->
       compile_binop(op,x,y,bvar,alpha,label)
     | Uniop(op,x) ->
@@ -128,6 +130,22 @@ let rec comp_llvm  (exp, bvar: string list, alpha:Map<string, string>,label) =
       (output,destt,labelt)
     | _ ->
       (string(exp) + "\n ERROr ^not compile-able^\n","",label)
+
+compile_while <- fun (c,b,bvar,alpha,label) ->
+  let start_cond = newlabel()
+  let start_body = newlabel()
+  let break_label = newlabel()
+  let (outc,destc,labelc) = comp_llvm(c,bvar,alpha,start_cond)
+  let (outb,destb,labelb) = comp_llvm(b,bvar,alpha,start_body)
+  let cmp_reg = newreg()
+  let mutable output = sprintf "br label %%%s\n" start_cond
+  output <- output + sprintf "\n%s:\n%s" start_cond outc
+  output <- output + sprintf "%s = icmp sgt i32 %s, 0\n" cmp_reg destc
+  output <- output + sprintf "br i1 %s, label %%%s, label %%%s\n" cmp_reg start_body break_label
+  output <- output + sprintf "\n%s:\n%s" start_body outb
+  output <- output + sprintf "br label %%%s\n" start_cond
+  output <- output + sprintf "\n%s:\n" break_label
+  (output, destb, break_label)
 
 compile_ifelse <- fun (c,t,f,bvar,alpha,label) ->
   let start_true = newlabel()
