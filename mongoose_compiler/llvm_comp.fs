@@ -136,7 +136,7 @@ compile_while <- fun (c,b,bvar,alpha,label) ->
   let cmp_reg = newreg()
   let mutable output = sprintf "br label %%%s\n" start_cond
   output <- output + sprintf "\n%s:\n%s" start_cond outc
-  output <- output + sprintf "%s = icmp sgt i32 %s, 0\n" cmp_reg destc
+  output <- output + sprintf "%s = icmp ne i32 %s, 0\n" cmp_reg destc
   output <- output + sprintf "br i1 %s, label %%%s, label %%%s\n" cmp_reg start_body break_label
   output <- output + sprintf "\n%s:\n%s" start_body outb
   output <- output + sprintf "br label %%%s\n" start_cond
@@ -153,7 +153,7 @@ compile_ifelse <- fun (c,t,f,bvar,alpha,label) ->
   let result = newreg()
   let rlbl = newlabel()
   let mutable output = outc
-  output <- output + sprintf "%s = icmp sgt i32 %s, 0\n" comparereg destc
+  output <- output + sprintf "%s = icmp ne i32 %s, 0\n" comparereg destc
   output <- output + sprintf "br i1 %s, label %%%s, label %%%s\n" comparereg start_true start_false
   output <- output + sprintf "\n%s:\n%s" start_true outt
   output <- output + sprintf "br label %%%s\n" rlbl
