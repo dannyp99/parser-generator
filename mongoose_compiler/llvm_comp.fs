@@ -76,9 +76,6 @@ let transinst = function
   | "<" -> (Comparison, "icmp slt i32")
   | "<=" -> (Comparison, "icmp sle i32")
   | "^" ->  (Cfunc, "call i32 @mongoose_expt")
-  | "=" -> (Cfunc, "call i32 @mongoose_assign")
-  | "&&" -> (Cfunc, "call i32 @mongoose_and")
-  | "||" -> (Cfunc, "call i32 @mongoose_or")
   | x -> (Unknown, x);;
 
 let includes = "\
@@ -90,6 +87,7 @@ declare i32 @printf(i8*,...)
 let mutable compile_while = fun (c,b,bvar,alpha,label) -> ("","","")
 let mutable compile_ifelse = fun (c,t,f,bvar,alpha,label) -> ("","","")
 let mutable compile_binop = fun (op,x,y,bvar,alpha,label) -> ("","","")
+let mutable compile_bool = fun (op,x,y,bvar,alpha,label) -> ("","","")
 let mutable compile_uniop = fun (op,x,bvar,alpha,label) -> ("","","")
 let mutable compile_let = fun (c,t,f,bvar,alpha,label) -> ("","","")
 
@@ -104,8 +102,6 @@ let rec comp_llvm  (exp, bvar: string list, alpha:Map<string, string>,label) =
         let avar = alpha.[n]
         output <- sprintf "%s = load i32, i32* %s, align 4\n" reg avar
       (output,reg,label)
-    | Binop("while",c,b) ->
-      compile_while(c,b,bvar,alpha,label)
     | Binop(op,x,y) ->
       compile_binop(op,x,y,bvar,alpha,label)
     | Uniop(op,x) ->
@@ -168,25 +164,58 @@ compile_ifelse <- fun (c,t,f,bvar,alpha,label) ->
   output <- output + result + phi
   (output,result,rlbl)
 
+compile_bool <- fun (op,x,y,bvar,alpha,label) ->
+  let ft_lab = newlabel() // fallthrough
+  let sc_lab = newlabel() // short circuit
+  let (outx,destx,labelx) = comp_llvm(x,bvar,alpha,label)
+  let (outy,desty,labely) = comp_llvm(y,bvar,alpha,ft_lab)
+  let start_cmp = newreg()
+  let ft_cmp = newreg()
+  let sc_reg = newreg()
+  let sc_fin = newreg()
+  let (cmp_type,sc_const) =
+    match op with
+      | "&&" -> ("eq",0)
+      | "||" -> ("ne",1)
+      | _ ->
+        printfn "bad operator %s passed to compile_bool" op
+        ("ERROR",0)
+  let mutable output =  outx
+  output <- output + sprintf "%s = icmp %s i32 %s, 0\n" start_cmp cmp_type destx
+  output <- output + sprintf "br i1 %s, label %%%s, label %%%s\n" start_cmp sc_lab ft_lab
+  output <- output + sprintf "\n%s:\n%s" ft_lab outy
+  output <- output + sprintf "%s = icmp ne i32 %s, 0\n" ft_cmp desty
+  output <- output + sprintf "br label %%%s\n" sc_lab
+  output <- output + sprintf "\n%s:\n" sc_lab
+  output <- output + sprintf "%s = phi i1 [%d, %%%s], [%s, %%%s]\n" sc_reg sc_const labelx ft_cmp labely
+  output <- output + sprintf "%s = zext i1 %s to i32\n" sc_fin sc_reg
+  (output,sc_fin,sc_lab)
+
 compile_binop <- fun (op, x, y, bvar, alpha, label) ->
-  let (outx,destx,xlabel) = comp_llvm(x,bvar,alpha,label)
-  let (outy,desty,ylabel) = comp_llvm(y,bvar,alpha,label)
-  let top = transinst(op)
-  let mutable output = sprintf "%s%s" outx outy
-  let mutable reg = newreg()
-  match top with
-    | (Arith, opstring) ->
-      output <- output + sprintf "%s = %s %s, %s\n" reg opstring destx desty
-    | (Cfunc, opstring) ->
-      output <- output + sprintf "%s = %s(i32 %s, i32 %s)\n" reg opstring destx desty
-    | (Comparison, opstring) ->
-      let tmp_reg = reg
-      reg <- newreg()
-      output <- output + sprintf "%s = %s %s, %s\n" tmp_reg opstring destx desty
-      output <- output + sprintf "%s = zext i1 %s to i32\n" reg tmp_reg
-    | (Unknown, opstring) ->
-      output <- "unrecognized binary operator"
-  (output,reg,label)
+  match op with
+    | "while" ->
+      compile_while(x,y,bvar,alpha,label)
+    | "&&"|"||" ->
+      compile_bool(op,x,y,bvar,alpha,label)
+    | _ ->
+      let (outx,destx,xlabel) = comp_llvm(x,bvar,alpha,label)
+      let (outy,desty,ylabel) = comp_llvm(y,bvar,alpha,label)
+      let top = transinst(op)
+      let mutable output = sprintf "%s%s" outx outy
+      let mutable reg = newreg()
+      match top with
+        | (Arith, opstring) ->
+          output <- output + sprintf "%s = %s %s, %s\n" reg opstring destx desty
+        | (Cfunc, opstring) ->
+          output <- output + sprintf "%s = %s(i32 %s, i32 %s)\n" reg opstring destx desty
+        | (Comparison, opstring) ->
+          let tmp_reg = reg
+          reg <- newreg()
+          output <- output + sprintf "%s = %s %s, %s\n" tmp_reg opstring destx desty
+          output <- output + sprintf "%s = zext i1 %s to i32\n" reg tmp_reg
+        | (Unknown, opstring) ->
+          output <- "unrecognized binary operator"
+      (output,reg,label)
 
 compile_uniop <- fun (op, x, bvar, alpha, label) ->
   let (outx,destx,xlabel) =
