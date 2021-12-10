@@ -121,7 +121,7 @@ let rec comp_llvm  (exp, bvar: string list, alpha:Map<string, string>,label) =
       comp_llvm(head,bvar,alpha,label)
     | Seq(head :: [tail]) ->
       let (outh,desth,labelh) = comp_llvm(head,bvar,alpha,label)
-      let (outt,destt,labelt) = comp_llvm(tail,bvar,alpha,label)
+      let (outt,destt,labelt) = comp_llvm(tail,bvar,alpha,labelh)
       let output = outh + outt
       (output,destt,labelt)
     | _ ->
@@ -312,7 +312,7 @@ let compile (tree:expr) =
   printfn "%s" (string tree)
   let alphamap = Map.empty<string, string>
 
-  let res = comp_llvm (tree, [], alphamap, "")
+  let res = comp_llvm (tree, [], alphamap, "0")
 
   let top = sprintf "%s\n%s\ndefine i32 @main() {\n" includes (String.concat "" (List.rev defs))
   
