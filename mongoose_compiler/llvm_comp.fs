@@ -124,6 +124,21 @@ let rec comp_llvm  (exp, bvar: string list, alpha:Map<string, string>,label) =
       let (outt,destt,labelt) = comp_llvm(tail,bvar,alpha,labelh)
       let output = outh + outt
       (output,destt,labelt)
+    | App(func, arg) ->
+      let reg = newreg()
+      let (outa,desta,labela) = comp_llvm(arg,bvar,alpha,label)
+      let mutable output = sprintf "%s does not exist in this scope" func
+      if alpha.ContainsKey(func) then
+        output <- outa
+        let afunc = alpha.[func]
+        let mutable type_string = ""
+        let mutable arg_string = ""
+        let func_vars = symtable.[afunc]
+        for b in func_vars do
+          type_string <- type_string + ",i32*"
+          arg_string <- arg_string + sprintf ", i32* %s" b
+        output <- output + sprintf "%s = call i32 (i32%s) %s(i32 %s%s)\n" reg type_string afunc desta arg_string
+      (output,reg,labela)
     | _ ->
       (string(exp) + "\n ERROr ^not compile-able^\n","",label)
 
@@ -258,33 +273,54 @@ compile_uniop <- fun (op, x, bvar, alpha, label) ->
       (sprintf "uniop %s not implemented\n" op, "0", xlabel)
 
 compile_let <- fun (var, expr, next, bvar:string list, alpha, label) ->
+  let mutable avar = "%" + var
+  if alpha.ContainsKey(var) then 
+    avar <- aConvert(var)
   match expr with
-      | Lambda(farg,body) ->
-      (* totally unsure if works
-        symtable <- symtable.Add(var,bvar) //add func name to symtable with its bvars (rec)
-        let bvarnew = (bvar) @ [farg] //add local lamba term to bvars
-        let (outb,destb,labelb) = comp_llvm(body,bvarnew,alpha,label) //compile body
-        let mutable prms = ""
-        for b in bvar do //cycle thru bvars and add them as params
-          prms <- prms + ", i32* " + b
-        let header = sprintf "define i32 @%s(i32 %%farg_%s%s) {{" var farg prms
-        let mutable sfarg = sprintf "%%%s = alloca i32, align 4\n" farg
-        sfarg <- sfarg + sprintf "store i32 %%farg_%s, i32 %s, align 4\n" farg farg //FORMAL PARAM‚add it as itself so that body recognizes it
-        let func = header + sfarg + outb + sprintf "ret i32 %s\n" destb
-        defs <- (defs) @ [func]
-        comp_llvm(next,bvar,alpha,label) *)
-        ("lambda not supported dude","","")
-      | _ ->
-        let mutable avar = "%" + var
-        if alpha.ContainsKey(var) then 
-          avar <- aConvert(var)
-        //let (outc,destv,labelv) = comp_llvm(var,bvar,alpha,label)
-        let (outexp,destexp,labelexp) = comp_llvm(expr,bvar,alpha,label) //let int
-        let output = sprintf "%s = alloca i32, align 4\nstore i32 %s, i32* %s, align 4\n" avar destexp avar
-        let alphanew = alpha.Add(var,avar)
-        let bvarnew = (bvar) @ [avar]
-        let (outn,destn,labeln) = comp_llvm(next,bvarnew,alphanew,labelexp)
-        (output + outn,destn,labeln)
+    | Lambda(farg,body) ->
+      avar <- "@" + avar.[1..]
+      let alpha_new = alpha.Add(var,avar)
+      symtable <- symtable.Add(avar,bvar) //add func name to symtable with its bvars (rec)
+      let mutable afarg = "%" + farg
+      if alpha.ContainsKey(farg) then
+        afarg <- aConvert(farg)
+      let alpha_local = alpha.Add(farg,afarg)
+      let bvarnew = (bvar) @ [afarg] //add local lamba term to bvars
+      let reg_count = lcx
+      lcx <- 0
+      let (outb,destb,labelb) = comp_llvm(body,bvarnew,alpha_local,label)
+      lcx <- reg_count
+      let mutable prms = ""
+      for b in bvar do
+        prms <- prms + ", i32* " + b
+
+      let mutable func_def = sprintf "\ndefine i32 %s(i32 %%lambda_arg%s) {\n" avar prms
+      func_def <- func_def + sprintf "%s = alloca i32\n" afarg
+      func_def <- func_def + sprintf "store i32 %%lambda_arg, i32* %s\n" afarg
+      func_def <- func_def + outb
+      func_def <- func_def + sprintf "ret i32 %s\n}\n" destb
+      defs <- (defs) @ [func_def]
+      
+      comp_llvm(next,bvar,alpha_new,label)
+    (* totally unsure if works
+      symtable <- symtable.Add(var,bvar) //add func name to symtable with its bvars (rec)
+      let (outb,destb,labelb) = comp_llvm(body,bvarnew,alpha,label) //compile body
+      let mutable prms = ""
+      for b in bvar do //cycle thru bvars and add them as params
+        prms <- prms + ", i32* " + b
+      let header = sprintf "define i32 @%s(i32 %%farg_%s%s) {{" var farg prms
+      let mutable sfarg = sprintf "%%%s = alloca i32, align 4\n" farg
+      sfarg <- sfarg + sprintf "store i32 %%farg_%s, i32 %s, align 4\n" farg farg //FORMAL PARAM‚add it as itself so that body recognizes it
+      let func = header + sfarg + outb + sprintf "ret i32 %s\n" destb
+      defs <- (defs) @ [func]
+      comp_llvm(next,bvar,alpha,label) *)
+    | _ ->
+      let alpha_new = alpha.Add(var,avar)
+      let (outexp,destexp,labelexp) = comp_llvm(expr,bvar,alpha,label) //let int
+      let output = sprintf "%s = alloca i32, align 4\nstore i32 %s, i32* %s, align 4\n" avar destexp avar
+      let bvarnew = (bvar) @ [avar]
+      let (outn,destn,labeln) = comp_llvm(next,bvarnew,alpha_new,labelexp)
+      (output + outn,destn,labeln)
 
 let boilerplate = "target datalayout = \"e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128\"
 target triple = \"x86_64-pc-linux-gnu\"\n\n"
