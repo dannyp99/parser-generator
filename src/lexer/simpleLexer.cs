@@ -53,13 +53,17 @@ public class simpleLexer : absLexer
   string[] multichar_syms = {"==","<=",">=","!=", "++","--","&&","||", "<<", ">>"};
 
   HashSet<string> kwhash = new HashSet<string>();
-  Dictionary<char,string> mshash = new Dictionary<char,string>();
+  Dictionary<char,List<string>> mshash = new Dictionary<char,List<string>>();
   
   public void addKeyword(string kw)
   {  kwhash.Add(kw);  }
   public void addMultichar(string ms)
   {
-    if (ms.Length>1) mshash[ms[0]] = ms.Substring(1,ms.Length-1);
+    List<string> mshash_list;
+    mshash.TryGetValue(ms[0], out mshash_list);
+    if(mshash_list == null){ mshash[ms[0]] = new List<string>();}
+    mshash[ms[0]].Add(ms);
+    // if (ms.Length>1) mshash[ms[0]] = ms.Substring(1,ms.Length-1);
     //Console.WriteLine("adding ms "+ms[0]+" to "+ms.Substring(1,ms.Length-1));
   }
 
@@ -140,12 +144,12 @@ public class simpleLexer : absLexer
        } catch (Exception) { ax= new lexToken("Float", double.Parse(tok)); }
       }
       else if (tok.Length==1 && ti<ssplit.Length) { // check for multichar sym
-        string rest= mshash[tok[0]]; 
+        List<string> msList = mshash[tok[0]];
         string nexttok =ssplit[ti];
         while ((nexttok==null || nexttok.Length<1) && ti<ssplit.Length-1)
           { nexttok = ssplit[++ti]; } // won't look past current line
         //Console.WriteLine("see "+tok+" and "+rest+" and nexttok "+nexttok.Length+".");
-        if (rest==nexttok) {ax= new lexToken("Symbol",tok+nexttok); ti++;}
+        if (msList.Contains(tok+nexttok)) { ax = new lexToken("Symbol",tok+nexttok);ti++;}
       }
      }
      catch (Exception) {ax = new lexToken("Symbol",tok);}
@@ -157,7 +161,7 @@ public class simpleLexer : absLexer
 }
 
 
-  /////// main for testing
+//   /////// main for testing
 //   public static void Main(string[] argv)
 //   {
 //      string ax = "while (1) fork();";
@@ -171,12 +175,13 @@ public class simpleLexer : absLexer
 //      while (token!=null);
 
 //      Console.WriteLine("\ntesting file input from lexertest.txt..");
-//      scanner = new simpleLexer("simpleTest.txt",null);
+//      scanner = new simpleLexer("test14.ms",null);
 //      do {
 //         token = scanner.next();
 //         if (token!=null) Console.WriteLine("Token from file: "+token);
 //      }
 //      while (token!=null);
+//      //Console.WriteLine(scanner.ssplit);
 //      Console.WriteLine("line number at "+scanner.linenum());
      
 //   }//main

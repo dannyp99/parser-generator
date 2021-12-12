@@ -138,7 +138,7 @@ public class Parser<Object>
                 Console.WriteLine("Sematic Action is " + actionopt);
             }
             action = actionopt;
-            if(action is Shift) { // being "match"
+            if(action is Shift) { // beginning "match"
                 if(TRACE) {
                     Console.WriteLine("Shifting to state "+action.Next);
                 }
@@ -164,7 +164,7 @@ public class Parser<Object>
                 
                 RGrule rulei = Rules[action.Next];
                 if(TRACE) { Console.WriteLine("Got rulei"); Console.WriteLine(rulei.Lhs);}
-                object val = rulei.RuleAction(stack);
+                object val = rulei.RuleAction(stack); //apply the production, associated linenum?
                 if(TRACE) { Console.WriteLine("Got val");}
                 int newtop = stack.Peek().Si; 
                 if(TRACE) { Console.WriteLine("Got newtop");}
