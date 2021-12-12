@@ -127,7 +127,7 @@ let rec comp_llvm  (exp, bvar: string list, alpha:Map<string, string>,label) =
     | App(func, arg) ->
       let reg = newreg()
       let (outa,desta,labela) = comp_llvm(arg,bvar,alpha,label)
-      let mutable output = sprintf "%s does not exist in this scope" func
+      let mutable output = sprintf "function %s does not exist in this scope" func
       if alpha.ContainsKey(func) then
         output <- outa
         let afunc = alpha.[func]
@@ -284,7 +284,7 @@ compile_let <- fun (var, expr, next, bvar:string list, alpha, label) ->
       let mutable afarg = "%" + farg
       if alpha.ContainsKey(farg) then
         afarg <- aConvert(farg)
-      let alpha_local = alpha.Add(farg,afarg)
+      let alpha_local = alpha_new.Add(farg,afarg)
       let bvarnew = (bvar) @ [afarg] //add local lamba term to bvars
       let reg_count = lcx
       lcx <- 0
@@ -317,7 +317,8 @@ compile_let <- fun (var, expr, next, bvar:string list, alpha, label) ->
     | _ ->
       let alpha_new = alpha.Add(var,avar)
       let (outexp,destexp,labelexp) = comp_llvm(expr,bvar,alpha,label) //let int
-      let output = sprintf "%s = alloca i32, align 4\nstore i32 %s, i32* %s, align 4\n" avar destexp avar
+      let mutable output = outexp
+      output <- output + sprintf "%s = alloca i32, align 4\nstore i32 %s, i32* %s, align 4\n" avar destexp avar
       let bvarnew = (bvar) @ [avar]
       let (outn,destn,labeln) = comp_llvm(next,bvarnew,alpha_new,labelexp)
       (output + outn,destn,labeln)
