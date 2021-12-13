@@ -60,6 +60,10 @@ let aConvert (x:string) =
   counter <- counter + 1
   "%" + x + string(counter)
 
+let fConvert (x:string) =
+  counter <- counter + 1
+  "@" + x + string(counter)
+
 type inst_type =
   | Cfunc
   | Comparison
@@ -273,14 +277,11 @@ compile_uniop <- fun (op, x, bvar, alpha, label) ->
       (sprintf "uniop %s not implemented\n" op, "0", xlabel)
 
 compile_let <- fun (var, expr, next, bvar:string list, alpha, label) ->
-  let mutable avar = "%" + var
-  if alpha.ContainsKey(var) then 
-    avar <- aConvert(var)
   match expr with
     | Lambda(farg,body) ->
-      avar <- "@" + avar.[1..]
-      let alpha_new = alpha.Add(var,avar)
-      symtable <- symtable.Add(avar,bvar) //add func name to symtable with its bvars (rec)
+      let func = fConvert(var)
+      let alpha_new = alpha.Add(var,func)
+      symtable <- symtable.Add(func,bvar) //add func name to symtable with its bvars (rec)
       let mutable afarg = "%" + farg
       if alpha.ContainsKey(farg) then
         afarg <- aConvert(farg)
@@ -293,28 +294,17 @@ compile_let <- fun (var, expr, next, bvar:string list, alpha, label) ->
       let mutable prms = ""
       for b in bvar do
         prms <- prms + ", i32* " + b
-
-      let mutable func_def = sprintf "\ndefine i32 %s(i32 %%lambda_arg%s) {\n" avar prms
+      let mutable func_def = sprintf "\ndefine i32 %s(i32 %%lambda_arg%s) {\n" func prms
       func_def <- func_def + sprintf "%s = alloca i32\n" afarg
       func_def <- func_def + sprintf "store i32 %%lambda_arg, i32* %s\n" afarg
       func_def <- func_def + outb
       func_def <- func_def + sprintf "ret i32 %s\n}\n" destb
       defs <- (defs) @ [func_def]
-      
       comp_llvm(next,bvar,alpha_new,label)
-    (* totally unsure if works
-      symtable <- symtable.Add(var,bvar) //add func name to symtable with its bvars (rec)
-      let (outb,destb,labelb) = comp_llvm(body,bvarnew,alpha,label) //compile body
-      let mutable prms = ""
-      for b in bvar do //cycle thru bvars and add them as params
-        prms <- prms + ", i32* " + b
-      let header = sprintf "define i32 @%s(i32 %%farg_%s%s) {{" var farg prms
-      let mutable sfarg = sprintf "%%%s = alloca i32, align 4\n" farg
-      sfarg <- sfarg + sprintf "store i32 %%farg_%s, i32 %s, align 4\n" farg farg //FORMAL PARAM‚add it as itself so that body recognizes it
-      let func = header + sfarg + outb + sprintf "ret i32 %s\n" destb
-      defs <- (defs) @ [func]
-      comp_llvm(next,bvar,alpha,label) *)
     | _ ->
+      let mutable avar = "%" + var
+      if alpha.ContainsKey(var) then 
+        avar <- aConvert(var)
       let alpha_new = alpha.Add(var,avar)
       let (outexp,destexp,labelexp) = comp_llvm(expr,bvar,alpha,label) //let int
       let mutable output = outexp
