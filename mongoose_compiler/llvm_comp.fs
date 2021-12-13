@@ -292,8 +292,7 @@ compile_let <- fun (var, expr, next, bvar:string list, alpha, label) ->
       let alpha_new = alpha.Add(var,func)
       symtable <- symtable.Add(func,bvar) //add func name to symtable with its bvars (rec)
       let mutable afarg = "%" + farg
-      if alpha.ContainsKey(farg) then
-        afarg <- aConvert(farg)
+      afarg <- aConvert(farg)
       let alpha_local = alpha_new.Add(farg,afarg)
       let bvarnew = (bvar) @ [afarg] //add local lamba term to bvars
       let reg_count = lcx
@@ -311,9 +310,7 @@ compile_let <- fun (var, expr, next, bvar:string list, alpha, label) ->
       defs <- (defs) @ [func_def]
       comp_llvm(next,bvar,alpha_new,label)
     | _ ->
-      let mutable avar = "%" + var
-      if alpha.ContainsKey(var) then 
-        avar <- aConvert(var)
+      let avar =  aConvert(var)
       let alpha_new = alpha.Add(var,avar)
       let (outexp,destexp,labelexp) = comp_llvm(expr,bvar,alpha,label) //let int
       let mutable output = outexp
