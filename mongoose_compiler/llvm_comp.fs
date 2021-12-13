@@ -129,6 +129,8 @@ let rec comp_llvm  (exp, bvar: string list, alpha:Map<string, string>,label) =
       let (outt,destt,labelt) = comp_llvm(tail,bvar,alpha,labelh)
       let output = outh + outt
       (output,destt,labelt)
+    | App(var, Uniop("-", e)) -> // FIXME bad parse workaround
+      comp_llvm(Binop("-", Var(var), e),bvar,alpha,label)
     | App(func, arg) ->
       let reg = newreg()
       let (outa,desta,labela) = comp_llvm(arg,bvar,alpha,label)
