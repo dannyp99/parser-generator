@@ -236,7 +236,7 @@ compile_binop <- fun (op, x, y, bvar, alpha, label) ->
           output <- output + sprintf "%s = zext i1 %s to i32\n" reg tmp_reg
         | Pow ->
           lcx <- lcx - 1 // ignore new reg
-          let pow_tree = Letexp( "pow_ax", x, Letexp( "pow_i", y, Binop( "while", Var("pow_i"), Seq([ Assign( "pow_i", Binop( "-", Var("pow_i"), Val(1) ) ); Seq([ Assign( "pow_ax", Binop( "*", Var("pow_ax"), x ) ); Nothing ]) ]) ) ) )
+          let pow_tree = Letexp( "pow_ax", x, Letexp( "pow_i", y, Binop( "while", Binop( "<", Val(1), Var("pow_i") ), Seq([ Assign( "pow_i", Binop( "-", Var("pow_i"), Val(1) ) ); Seq([ Assign( "pow_ax", Binop( "*", Var("pow_ax"), x ) ); Nothing ]) ]) ) ) )
           let (outpow,destpow,labelpow) = comp_llvm(pow_tree,bvar,alpha,ylabel)
           reg <- destpow
           output <- output + outpow
