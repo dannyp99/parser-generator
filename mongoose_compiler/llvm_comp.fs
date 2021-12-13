@@ -65,22 +65,23 @@ let fConvert (x:string) =
   "@" + x + string(counter)
 
 type inst_type =
-  | Cfunc
-  | Comparison
-  | Arith
-  | Unknown
+  | Cfunc of string
+  | Comparison of string
+  | Arith of string
+  | Pow
+  | Unknown of string
 
 let transinst = function
-  | "+" -> (Arith, "add i32")
-  | "-" -> (Arith, "sub i32")
-  | "*" -> (Arith, "mul i32")
-  | "/" -> (Arith, "sdiv i32")
-  | "%" -> (Arith, "srem i32")
-  | "==" -> (Comparison, "icmp eq i32")
-  | "<" -> (Comparison, "icmp slt i32")
-  | "<=" -> (Comparison, "icmp sle i32")
-  | "^" ->  (Cfunc, "call i32 @mongoose_expt")
-  | x -> (Unknown, x);;
+  | "+" -> Arith("add i32")
+  | "-" -> Arith("sub i32")
+  | "*" -> Arith("mul i32")
+  | "/" -> Arith("sdiv i32")
+  | "%" -> Arith("srem i32")
+  | "==" -> Comparison("icmp eq i32")
+  | "<" -> Comparison("icmp slt i32")
+  | "<=" -> Comparison("icmp sle i32")
+  | "^" ->  Pow
+  | x -> Unknown(x);;
 
 let includes = "\
 declare i32 @putchar(i32)
@@ -217,22 +218,30 @@ compile_binop <- fun (op, x, y, bvar, alpha, label) ->
     | "&&"|"||" ->
       compile_bool(op,x,y,bvar,alpha,label)
     | _ ->
+      let mutable blabel = label
       let (outx,destx,xlabel) = comp_llvm(x,bvar,alpha,label)
-      let (outy,desty,ylabel) = comp_llvm(y,bvar,alpha,label)
+      let (outy,desty,ylabel) = comp_llvm(y,bvar,alpha,xlabel)
       let top = transinst(op)
       let mutable output = sprintf "%s%s" outx outy
       let mutable reg = newreg()
       match top with
-        | (Arith, opstring) ->
+        | Arith(opstring) ->
           output <- output + sprintf "%s = %s %s, %s\n" reg opstring destx desty
-        | (Cfunc, opstring) ->
+        | Cfunc(opstring) ->
           output <- output + sprintf "%s = %s(i32 %s, i32 %s)\n" reg opstring destx desty
-        | (Comparison, opstring) ->
+        | Comparison(opstring) ->
           let tmp_reg = reg
           reg <- newreg()
           output <- output + sprintf "%s = %s %s, %s\n" tmp_reg opstring destx desty
           output <- output + sprintf "%s = zext i1 %s to i32\n" reg tmp_reg
-        | (Unknown, opstring) ->
+        | Pow ->
+          lcx <- lcx - 1 // ignore new reg
+          let pow_tree = Letexp( "pow_ax", x, Letexp( "pow_i", y, Binop( "while", Var("pow_i"), Seq([ Assign( "pow_i", Binop( "-", Var("pow_i"), Val(1) ) ); Seq([ Assign( "pow_ax", Binop( "*", Var("pow_ax"), x ) ); Nothing ]) ]) ) ) )
+          let (outpow,destpow,labelpow) = comp_llvm(pow_tree,bvar,alpha,ylabel)
+          reg <- destpow
+          output <- output + outpow
+          blabel <- labelpow
+        | Unknown(opstring) ->
           output <- "unrecognized binary operator"
       (output,reg,label)
 
