@@ -120,7 +120,7 @@ let rec comp_llvm  (exp, bvar: string list, alpha:Map<string, string>,label) =
       let mutable output = sprintf "Error, %s not defined" var
       if alpha.ContainsKey(var) then
         let avar = alpha.[var]
-        output <- outv + sprintf "store i32 %s, i32* %%%s, align 4\n" destv var
+        output <- outv + sprintf "store i32 %s, i32* %s, align 4\n" destv avar
       (output,destv,labelv)
     | Seq(head :: [Nothing]) ->
       comp_llvm(head,bvar,alpha,label)
