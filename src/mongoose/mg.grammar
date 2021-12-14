@@ -34,6 +34,7 @@ left ! 194
 # Nothing - enum type. I think closest is expr.EOF type
 E --> Val:n { return NewVal(n); }
 E --> ( E:e )  { return e; }
+E --> Var:a - E:b { return NewBinop("-",NewVar(a),b); }
 E --> ( Var:f E:x ) { return NewApp(f,x); }
 E --> cin { return NewUniop("CIN", NewFSNothing); }
 E --> cout Str:s { return NewUniop("COUT",NewSym(s)); } 
