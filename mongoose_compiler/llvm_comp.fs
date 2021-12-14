@@ -58,7 +58,7 @@ let newstring () =
   
 let aConvert (x:string) =
   counter <- counter + 1
-  "%" + x + string(counter)
+  "%v_" + x + string(counter)
 
 let fConvert (x:string) =
   counter <- counter + 1
