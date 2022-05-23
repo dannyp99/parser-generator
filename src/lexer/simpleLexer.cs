@@ -40,7 +40,7 @@ using System.Collections.Generic;
 public class simpleLexer : absLexer
 {
   public static string operators_re =
-    "([()\\+\\-\\*/:;%^<>!,]|\\s|\\[|\\]|{|}|=|\"[^\"]*\")";
+    "([()\\+\\-\\*/:;%^<>!,.]|\\s|\\[|\\]|{|}|=|\"[^\"]*\")";
 
   public string endofline = null; //"ENDL";
   // optional endofline marker
@@ -50,16 +50,20 @@ public class simpleLexer : absLexer
   public char commentchar = '#';  // lines starting with this are ignored
 
   string[] keywords = {"if","else","while","let","for","lambda"};
-  string[] multichar_syms = {"==","<=",">=","!=", "++","--","&&","||"};
+  string[] multichar_syms = {"==","<=",">=","!=", "++","--","&&","||", "<<", ">>"};
 
   HashSet<string> kwhash = new HashSet<string>();
-  Dictionary<char,string> mshash = new Dictionary<char,string>();
+  Dictionary<char,List<string>> mshash = new Dictionary<char,List<string>>();
   
   public void addKeyword(string kw)
   {  kwhash.Add(kw);  }
   public void addMultichar(string ms)
   {
-    if (ms.Length>1) mshash[ms[0]] = ms.Substring(1,ms.Length-1);
+    List<string> mshash_list;
+    mshash.TryGetValue(ms[0], out mshash_list);
+    if(mshash_list == null){ mshash[ms[0]] = new List<string>();}
+    mshash[ms[0]].Add(ms);
+    // if (ms.Length>1) mshash[ms[0]] = ms.Substring(1,ms.Length-1);
     //Console.WriteLine("adding ms "+ms[0]+" to "+ms.Substring(1,ms.Length-1));
   }
 
@@ -78,10 +82,17 @@ public class simpleLexer : absLexer
 
   public simpleLexer(string filename, string eof) // read from file
   {
+     bool TRACE = false;
      foreach (string kw in keywords) addKeyword(kw);
      foreach (string ms in multichar_syms) addMultichar(ms);  
-     endofline = eof;
+     //endofline = eof;
      var tempLines = new List<string>(System.IO.File.ReadAllLines(filename));
+     if(TRACE){
+        Console.WriteLine("Raw File Lines from simplexLexer:");
+        foreach(string s in tempLines){
+           Console.WriteLine(s);
+        }
+     }
      tempLines.Add("EOF");
      lines = tempLines.ToArray();
      linenumber = 0;
@@ -99,8 +110,8 @@ public class simpleLexer : absLexer
        }
      if (s!=null && s.Length>0 && s[0]!=commentchar) {
         if (endofline!=null && endofline.Length>1)
-           s = s+ " " + endofline;
-        ssplit = Regex.Split(s,operators_re);
+           s = s+ " " + endofline; // This line is cause endofline to appear after lines
+        ssplit = Regex.Split(s,operators_re); // This line is causeing endofline to appear after lines
         ti = 0; // token index in ssplit
         return true;
      }
@@ -109,7 +120,7 @@ public class simpleLexer : absLexer
 
   static bool alphabetical(char x) => (x >=65 && x<=90) || (x>=97 && x<=122);
 
-  public lexToken next()
+  public virtual lexToken next()
   {
      string tok = "";
      if (ssplit==null) return null;
@@ -133,12 +144,12 @@ public class simpleLexer : absLexer
        } catch (Exception) { ax= new lexToken("Float", double.Parse(tok)); }
       }
       else if (tok.Length==1 && ti<ssplit.Length) { // check for multichar sym
-        string rest= mshash[tok[0]]; 
+        List<string> msList = mshash[tok[0]];
         string nexttok =ssplit[ti];
         while ((nexttok==null || nexttok.Length<1) && ti<ssplit.Length-1)
           { nexttok = ssplit[++ti]; } // won't look past current line
         //Console.WriteLine("see "+tok+" and "+rest+" and nexttok "+nexttok.Length+".");
-        if (rest==nexttok) {ax= new lexToken("Symbol",tok+nexttok); ti++;}
+        if (msList.Contains(tok+nexttok)) { ax = new lexToken("Symbol",tok+nexttok);ti++;}
       }
      }
      catch (Exception) {ax = new lexToken("Symbol",tok);}
@@ -147,32 +158,34 @@ public class simpleLexer : absLexer
 
   public int linenum() {return linenumber;}
   public virtual lexToken translate_token(lexToken t) { return t; }
+}
 
 
-  /////// main for testing
-  public static void Main(string[] argv)
-  {
-     string ax = "while (1) fork();";
-     if (argv.Length>0) ax = argv[0];
-     absLexer scanner = new simpleLexer(ax);
-     lexToken token;
-     do {
-        token = scanner.next();
-        if (token!=null) Console.WriteLine("lexToken: "+token);
-     }
-     while (token!=null);
+//   /////// main for testing
+//   public static void Main(string[] argv)
+//   {
+//      string ax = "while (1) fork();";
+//      if (argv.Length>0) ax = argv[0];
+//      absLexer scanner = new simpleLexer(ax);
+//      lexToken token;
+//      do {
+//         token = scanner.next();
+//         if (token!=null) Console.WriteLine("lexToken: "+token);
+//      }
+//      while (token!=null);
 
-     Console.WriteLine("\ntesting file input from lexertest.txt..");
-     scanner = new simpleLexer("simpleTest.txt",null);
-     do {
-        token = scanner.next();
-        if (token!=null) Console.WriteLine("Token from file: "+token);
-     }
-     while (token!=null);
-     Console.WriteLine("line number at "+scanner.linenum());
+//      Console.WriteLine("\ntesting file input from lexertest.txt..");
+//      scanner = new simpleLexer("test14.ms",null);
+//      do {
+//         token = scanner.next();
+//         if (token!=null) Console.WriteLine("Token from file: "+token);
+//      }
+//      while (token!=null);
+//      //Console.WriteLine(scanner.ssplit);
+//      Console.WriteLine("line number at "+scanner.linenum());
      
-  }//main
-}//simpleLexer
+//   }//main
+// }//simpleLexer
 
 /*  sample run:
 $ mcs simpleLexer.cs absLexer.cs

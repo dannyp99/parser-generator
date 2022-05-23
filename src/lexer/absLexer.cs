@@ -1,8 +1,8 @@
 public interface absLexer
 {
-   lexToken next(); // returns null at eof
+   lexToken next(); // returns null at eof. Should return a token of the appropriate type
    int linenum();
-   lexToken translate_token(lexToken t);
+   //lexToken translate_token(lexToken t);
 }
 
 public class lexToken

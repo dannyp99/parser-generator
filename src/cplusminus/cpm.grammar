@@ -77,6 +77,9 @@ symbols may follow the error symbol, eventually one of the error productions
 will be reduced.  These productions can have semantic actions that
 report specific errors.
 
+
+Do RESYNC!!!! is easier.
+
 The second method of error recovery is rather straightforward: the
 grammar can define one or more "resynchronization" terminal symbols
 using the "resynch" directive.  When an error is encountered, the

@@ -1,0 +1,82 @@
+# grammar for "C-plus-minus"
+
+# Anything on a ! line will be inserted verbatim into the generated parser
+!// Needs to be compiled with both .dlls (all .dlls?)
+!//using System;
+!
+!// Do we even need this? I don't know if it fits into how we are doing things
+!//public static void Main(string[] argv]) {
+!   //Console.WriteLine("Write something in C+- : "); // Changed
+!   //string input = Console.ReadLine();  // Changed
+!   //simpleLexer lexer1 =  new simpleLexer(srcfile, "EOF"); // Changed
+!   //Parser<object> parser = Generator.make_parser(); // Changed
+!   //parser1.parse(lexer1); // Changed
+!//}//main
+
+#grammarname cpm
+absyntype string
+# is there a difference between nonterminals and nonterminal?
+nonterminals STAT STATLIST EXPR 
+nonterminal EXPRLIST string
+# Above line may cause issue because in our case is it an "FSharpType"
+terminal x y z cin cout ; ( ) << >>
+topsym STATLIST
+resync ;
+
+STATLIST --> STAT 
+STATLIST --> STATLIST STAT 
+STAT --> cin >> EXPR ; { return Console.ReadLine(); }
+STAT --> cout << EXPRLIST:s ; { Console.WriteLine(": " + s); return ""; }
+
+EXPR --> x { return "x"; }  
+EXPR --> y { return "y"; } 
+EXPR --> z { return "z"; }
+EXPR --> ( EXPR:s ) { return s; }
+EXPRLIST --> EXPR:s { return s; }
+EXPRLIST --> EXPRLIST:sl << EXPR:s { return String.Format("{0} {1}",sl,s); }
+
+# STAT --> ERROR  { parser.report("invalid statement, skipping to ;"); String::new(); }
+
+EOF
+
+
+Everything after 'EOF' is ignored and can be used for comments.
+
+Rustlr uses two methods of error recovery, which this toy language
+experiments with.  The first method requires the designation of a
+special terminal symbol as an error recovery symbol, using the
+directive "errsym" or "errorsymbol".  This symbol is assumed to not
+conflict with actual input tokens.  The error symbol can appear at
+most once on the right-hand side of a production rule, followed by
+zero or more terminal symbols.  When an error is encountered (a
+lookahead symbol with no defined transition in the LR/LALR
+finite-state machine), the parser looks down the parse stack for a
+state that can "shift" the error symbol (ERROR here). If found, it
+truncates the stack and simuluates a shift of the next state
+associated with the error symbol onto the stack.  It then skips lookheads
+until a valid transition is found for the new state.  Since only terminal
+symbols may follow the error symbol, eventually one of the error productions
+will be reduced.  These productions can have semantic actions that
+report specific errors.
+
+
+Do RESYNC!!!! is easier.
+
+The second method of error recovery is rather straightforward: the
+grammar can define one or more "resynchronization" terminal symbols
+using the "resynch" directive.  When an error is encountered, the
+parser skips ahead past the first resynchronization symbol.  Then it
+looks down the parse stack for a state that has a valid transition on
+the next symbol.  For languages that ends statements with a ;
+(semicolon), the ; is the natural choice as the resynch symbol.  The
+parser will report an error message for the current statement, then
+skip over to the next statement.
+
+The second (resynch) method of error recovery is attempted if the
+first method fails or if no error symbol is defined.
+
+If both methods of error-recovery fail, the parser simply skips input
+tokens until a suitable action is found.
+
+One can experiment with this grammar with "C+-" input such as
+cout << x ; cout y ; cin >> ; cout << y << z ;

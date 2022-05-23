@@ -1,5 +1,20 @@
 using System;
 using System.Collections.Generic;
+using System.IO; //For RawParse function
+
+
+public class RGrule 
+{ 
+    public string Lhs;
+    public Func<Stack<StackElement<object>>,object> RuleAction;
+
+    public RGrule() {}
+    public RGrule(string lh)
+    {
+        Lhs=lh;
+        RuleAction = (p) => {return new object();};
+    }
+}
 
 public class StackElement<Object>
 {
@@ -14,14 +29,15 @@ public class StackElement<Object>
 
     public override string ToString()
     {
-        return String.Format("Index: {0} with value {1}", Si, (string) Value);
+        return String.Format("Index: {0} with value {1}", Si, Value.ToString());
     }
 }
 
-public class Parser<Object>
+public class Parser<Object>  
 {
     public List<Dictionary<string,IStateAction>> RSM;
     public List<RGrule> Rules;
+    public string ReSyncSymbol { get; set; }
 
     public Parser(int rlen, int slen) 
     {
@@ -32,13 +48,26 @@ public class Parser<Object>
             RSM.Add(new Dictionary<string,IStateAction>(1024));
         }
     }
-
-    //TODO parse
-    // line 1064 of Rust
-    public object Parse(simpleLexer tokenizer)
+    public void RawParse(simpleLexer tokenizer){
+        bool TRACE = false;
+        List<lexToken> ToTranslate = new List<lexToken>();
+        using( StreamWriter sw = new StreamWriter("./RawParse.txt")) {
+            var token = tokenizer.next();
+            while(token != null) {
+                if(TRACE){
+                    Console.WriteLine("Token = " + token);
+                }
+                sw.Write(token + "\n");
+                ToTranslate.Add(token);
+                token = tokenizer.next();
+            }
+        }
+    }
+//absLexer
+    public object Parse(absLexer tokenizer) //used to be simpleLexer, GrammarLexer conversion
     {
         bool TRACE = false;
-        absLexer abstractLex = new concreteLexer();
+        //1 absLexer abstractLex = new concreteLexer();
         object result = default(object);
         Stack<StackElement<object>> stack = new Stack<StackElement<object>>(8*1024);
 
@@ -48,16 +77,15 @@ public class Parser<Object>
         // action is error until it isnt
         IStateAction action = unexpected;
         bool stopparsing = false;
-        var nextoken = tokenizer.next();
+        var lookahead = tokenizer.next();
         if(TRACE) {
-            Console.WriteLine("*** First token: "+nextoken);        
+            //Console.WriteLine("*** First token: "+nextoken);        
         }
-        lexToken lookahead = abstractLex.translate_token(nextoken);
         if(TRACE) {
             Console.WriteLine("*** First translated token: "+lookahead);                
         }
         if(lookahead == null) { stopparsing = true; }
-        abstractLex.translate_token(lookahead);
+        //abstractLex.translate_token(lookahead);
         if(TRACE) {
             Console.WriteLine("lookahead " + lookahead.token_type);
         }
@@ -65,31 +93,81 @@ public class Parser<Object>
         while(!stopparsing) {
             //Console.WriteLine(stack.Peek());
             int currentState = stack.Peek().Si;
+            var stackEl = stack.Peek();
             if(TRACE) {
                 Console.Write("State "+currentState+", lookahead ("+lookahead.token_type+"): ");            
             }
-            IStateAction actionopt = RSM[currentState][lookahead.token_type];
+            IStateAction actionopt;
+            if(TRACE){ Console.WriteLine("Retrieving actionopt");}
+            RSM[currentState].TryGetValue(lookahead.token_type, out actionopt);
+            if(actionopt == null) { // Enter Resync Recovery Mode
+                Console.WriteLine("Unexpected token type" + lookahead.token_type + " with value " + lookahead.token_value + "\nOn line " + tokenizer.linenum() + "\nCurrent State: " + currentState  );
+                while(lookahead.token_type != ReSyncSymbol && lookahead.token_type != "EOF") {
+                    //1 nextoken = tokenizer.next(); 
+                    //1 lookahead = abstractLex.translate_token(nextoken);
+                    lookahead = tokenizer.next();
+                }
+
+                if(lookahead.token_type !="EOF"){
+                    //1 nextoken = tokenizer.next();
+                    //1 lookahead = abstractLex.translate_token(nextoken);
+                    lookahead = tokenizer.next();
+                }
+                
+                if(TRACE) { Console.WriteLine("Popping stack...");}
+                while( actionopt == null && stack.Count > 0) {
+                    stackEl = stack.Pop();
+                    if(TRACE){
+                        if(stackEl.Value != null){   
+                          Console.WriteLine("StackElement:: " + stackEl);
+                        }
+                    }
+                    currentState = stackEl.Si;
+                    RSM[currentState].TryGetValue(lookahead.token_type, out actionopt);
+                }
+                if(TRACE) { Console.WriteLine("----BOTTOM OF STACK----"); }
+                
+                if(actionopt == null) {
+                    Console.WriteLine("Parsing Failed");
+                    return null;
+                }
+
+                stack.Push(stackEl);
+            } // End Error Handling
+            if (TRACE) {
+                Console.WriteLine("Sematic Action is " + actionopt);
+            }
             action = actionopt;
-            if(action is Shift) { // being "match"
+            if(action is Shift) { // beginning "match"
                 if(TRACE) {
                     Console.WriteLine("Shifting to state "+action.Next);
                 }
                 stack.Push(new StackElement<object>(action.Next,lookahead.token_value));
                 if (lookahead.token_type!="EOF") {
-                  nextoken = tokenizer.next();
-
+                  lookahead = tokenizer.next();
+                  //1 nextoken = tokenizer.next();
+                  //Console.WriteLine("Token before translation " + nextoken.token_type);
                   if(TRACE) {
-                    Console.WriteLine("***next token: "+nextoken);
+                    //Console.WriteLine("***next token: "+nextoken);
                   }
-                  if (nextoken!=null)
-                    lookahead = abstractLex.translate_token(nextoken);
+                  if (lookahead!=null) {//1nextoken!=null) {
+                    //1 lookahead = abstractLex.translate_token(nextoken);
+                    //Console.WriteLine("Token after translation " + lookahead.token_type);
+                    if(TRACE) {
+                        Console.WriteLine("*** translated nextoken: " + lookahead);
+                    }
+                  }
                   else  stopparsing=true;
                 }// if not at EOF
             }
             else if(action is Reduce) {
+                
                 RGrule rulei = Rules[action.Next];
-                object val = rulei.RuleAction(stack);
+                if(TRACE) { Console.WriteLine("Got rulei"); Console.WriteLine(rulei.Lhs);}
+                object val = rulei.RuleAction(stack); //apply the production, associated linenum?
+                if(TRACE) { Console.WriteLine("Got val");}
                 int newtop = stack.Peek().Si; 
+                if(TRACE) { Console.WriteLine("Got newtop");}
 
                 if(TRACE) {
                     Console.Write("Reduce by rule "+action.Next+",  ");

@@ -1,0 +1,66 @@
+# LR(1) grammar (ambiguous) for Mongoose 0.2
+# This code will be injected verbatum.
+!using static MongooseCompiler;
+!
+!public static class Counter {
+!   public static int counter = 0;
+!}
+nonterminal E expr
+nonterminal ES expr
+terminal + - * / % ^ ( ) COLON = < <= == . ; && || ! 
+terminal if else while let cin cout lambda
+typedterminal Var string
+typedterminal Val int
+typedterminal Str string
+topsym E
+
+# only proper operators should need precedence declarations
+# Add in !commands so that the code can be injected into the par.cs
+left + 200
+left - 300
+left * 400
+left / 500
+left % 500
+left ^ 550
+left = 30
+left == 35
+left <= 35
+left < 35
+left && 190
+left || 192
+left ! 194
+
+# rx(e) - makes new reference counting pointer
+# Nothing - enum type. I think closest is expr.EOF type
+E --> Val:n { return NewVal(n); }
+E --> ( E:e )  { return e; }
+E --> Var:a - E:b { return NewBinop("-",NewVar(a),b); }
+E --> ( Var:f E:x ) { return NewApp(f,x); }
+E --> cin { return NewUniop("CIN", NewFSNothing); }
+E --> cout Str:s { return NewUniop("COUT",NewSym(s)); } 
+E --> cout E:e { return NewUniop("COUT",e); }
+E --> E:a + E:b { return NewBinop("+",a,b); }
+E --> E:a - E:b { return NewBinop("-",a,b); }
+E --> E:a * E:b { return NewBinop("*",a,b); }
+E --> E:a / E:b { return NewBinop("/",a,b); }
+E --> E:a % E:b { return NewBinop("%",a,b); }
+E --> E:a ^ E:b { return NewBinop("^",a,b); }
+#E --> E:a = E:b { return NewBinop("=",a,b); }
+E --> E:a == E:b { return NewBinop("==",a,b); }
+E --> E:a < E:b { return NewBinop("<",a,b); }
+E --> E:a <= E:b { return NewBinop("<=",a,b); }
+E --> while ( E:a ) E:b { return NewBinop("while",a,b); }
+E --> E:a && E:b { return NewBinop("&&",a,b); }
+E --> E:a || E:b { return NewBinop("||",a,b); }
+E --> - E:e { return NewUniop("-",e); }
+E --> ! E:e { return NewUniop("!",e); }
+E --> let Var:x = E:e1 COLON E:e2 { return NewLetexp(x,e1,e2); }
+E --> Var:x = E:e { return NewAssign(x,e); }
+E --> lambda Var:x . E:e { return NewLambda(x,e); }
+E --> if E:c E:a  else E:b { return NewIfelse(c,a,b); }
+E --> E:e ; ES:es { return NewSeq(e,es); }
+ES -->  { return NewFSNothing; }
+ES --> E:e ; ES:es { return NewSeq(e,es); }
+E --> Var:x { return NewVar(x); }
+
+EOF
